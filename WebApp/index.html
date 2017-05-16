@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Demo Web App</title>
+  </head>
+  <body>
+  	<script src="thrift.js"></script>
+    <script src="api/GeolocationService.js"></script>
+    <script src="api/geoservice_types.js"></script>
+    <script>
+      (function() {
+      	var transport = new Thrift.TXHRTransport("/");
+      	var protocol  = new Thrift.TJSONProtocol(transport);
+        var client    = new GeolocationServiceClient(protocol);
+
+        var result = client.getFeatures(-180, 180, -90, 90);
+        var a = 5;
+      })();
+  	</script>
+  </body>
+</html>
