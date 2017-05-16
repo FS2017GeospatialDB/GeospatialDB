@@ -8,15 +8,21 @@
   	<script src="thrift.js"></script>
     <script src="api/GeolocationService.js"></script>
     <script src="api/geoservice_types.js"></script>
-    <script>
-      (function() {
-      	var transport = new Thrift.TXHRTransport("/");
-      	var protocol  = new Thrift.TJSONProtocol(transport);
-        var client    = new GeolocationServiceClient(protocol);
+    <script defer>
+    	window.addEventListener("load", function() {
+			var transport = new Thrift.TXHRTransport("http://localhost:8000/service");
+	      	var protocol  = new Thrift.TJSONProtocol(transport);
+	        var client    = new GeolocationServiceClient(protocol);
 
-        var result = client.getFeatures(-180, 180, -90, 90);
-        var a = 5;
-      })();
+	        var result = client.getFeatures(-180, 180, -90, 90);
+	        var a = 5;
+
+	        document.getElementById("dataGoesHere").innerHTML = JSON.stringify(result);
+    	});
   	</script>
+
+  	<h1>This is our web app.</h1>
+  	<br>
+  	<div id="dataGoesHere"></div>
   </body>
 </html>

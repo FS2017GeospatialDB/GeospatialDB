@@ -19,7 +19,7 @@ public class GeoHandler implements GeolocationService.Iface {
 	List<Feature> results = new ArrayList<>();
 	Session session = Database.getSession();
 	
-	ResultSet rs = session.execute("SELECT * FROM features.features LIMIT 10");
+	ResultSet rs = session.execute("SELECT * FROM features.features");
 	while (!rs.isExhausted()) {
 	    Row row = rs.one();
 	    Feature feature = new Feature(
