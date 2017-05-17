@@ -98,6 +98,7 @@ public class Server {
           
         body.setContentType("text/html; charset=UTF-8");
         response.setEntity(body);
+        response.addHeader("Access-Control-Allow-Origin", "*");
       }
     }
  
