@@ -82,16 +82,13 @@ public class Server {
 
       // Handle "service" Requests
       String target = request.getRequestLine().getUri();
-      if (target.indexOf("?") != -1) target = target.substring(0, target.indexOf("?"));
-      if (target.equals("/service")) {
+      if (target.startsWith("/service")) {
        
         HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
         byte[] entityContent = EntityUtils.toByteArray(entity);
           
         final String output = this.thriftRequest(entityContent);
-        System.out.println(output);
         EntityTemplate body = new EntityTemplate(new ContentProducer() {
-
           public void writeTo(final OutputStream outstream) throws IOException {
             OutputStreamWriter writer = new OutputStreamWriter(outstream, "UTF-8");
             writer.write(output);
@@ -133,17 +130,14 @@ public class Server {
   static class RequestListenerThread extends Thread {
 
       private final ServerSocket httpServerSocket;
-      private final ServerSocket rawServerSocket;
       private final HttpParams params;
       private final HttpService httpService;
 
       public RequestListenerThread(int port) throws IOException {
           this.httpServerSocket = new ServerSocket(port);
-          this.rawServerSocket = new ServerSocket(port+1);
           this.params = new BasicHttpParams();
-          this.params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 1000).setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, 8 * 1024)
-                  .setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK, false).setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true)
-                  .setParameter(CoreProtocolPNames.ORIGIN_SERVER, "HttpComponents/1.1");
+          this.params.setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, 8 * 1024).setParameter(CoreProtocolPNames.ORIGIN_SERVER, "HttpComponents/1.1")
+                  .setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK, false).setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true);
 
           // Set up the HTTP protocol processor
           HttpProcessor httpproc = new BasicHttpProcessor();
@@ -160,7 +154,6 @@ public class Server {
 
       public void run() {
         System.out.println("HTTP listening on port " + httpServerSocket.getLocalPort());
-        System.out.println("Point your browser to http://localhost:8088/index.html");
         
         while (!Thread.interrupted()) {
           try {
@@ -192,41 +185,9 @@ public class Server {
               break;
           } catch (IOException e) {
             System.out.println("I/O error initialising connection thread: " + e.getMessage());
-              break;
+            break;
           }
+        }
       }
-  }}
-
-  /*static class HttpWorkerThread extends Thread {
-
-      private final HttpService httpservice;
-      private final HttpServerConnection conn;
-         
-
-      public HttpWorkerThread(final HttpService httpservice, final HttpServerConnection conn) {
-          super();
-          this.httpservice = httpservice;
-          this.conn = conn;
-      }
-
-      public void run() {
-          System.out.println("New HTTP connection thread");
-          HttpContext context = new BasicHttpContext(null);
-          try {
-            while (!Thread.interrupted() && this.conn.isOpen())
-              this.httpservice.handleRequest(this.conn, context);
-          } catch (ConnectionClosedException ex) {
-            System.out.println("Client closed connection");
-          } catch (IOException ex) {
-            System.out.println("I/O error: " + ex.getMessage());
-          } catch (HttpException ex) {
-            System.out.println("Unrecoverable HTTP protocol violation: " + ex.getMessage());
-          } finally {
-              try {
-                  this.conn.shutdown();
-              } catch (IOException ignore) {
-              }
-          }
-      }
-  }*/
+  }
 }
