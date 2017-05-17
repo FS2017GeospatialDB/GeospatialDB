@@ -28,7 +28,7 @@ public class GeoHandler implements GeolocationService.Iface {
               null);
 
         if (feature.getLatitude() > lBox && feature.getLatitude() < rBox
-      && feature.getLongitude() > bBox && feature.getLatitude() < tBox)
+      && feature.getLongitude() > bBox && feature.getLongitude() < tBox)
         results.add(feature);
     }
     
