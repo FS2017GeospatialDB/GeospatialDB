@@ -1,3 +1,15 @@
+////////////////////////////////////////////////////////////////
+//
+//
+//                      ABANDONED
+//  THIS SCHEMA DESIGN ASSUMES THAT RESTRICTION CAN BE APPLIED
+//  ON MIDDLE CLUSTERING GROUPS, WHICH IS NOT ALLOWED IN REALITY
+//  
+//
+//
+////////////////////////////////////////////////////////////////
+
+
 CREATE KEYSPACE COLORADO
 WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 3 };
 
