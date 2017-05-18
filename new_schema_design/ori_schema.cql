@@ -20,7 +20,7 @@ CREATE TABLE NODE(
     lon       float,
     movable   boolean,
     version   int,
-    feature   blob,
+    feature   text,
     PRIMARY KEY (movable, lon, lat, id)
 );
 
@@ -33,7 +33,7 @@ CREATE TABLE COMPLEX(
     r_lon     float,
     movable   boolean,
     version   int,
-    feature   blob,
+    feature   text,
     PRIMARY KEY (movable, l_lon, r_lon, u_lat, d_lat, id)
 );
 
@@ -48,6 +48,6 @@ CREATE TABLE TIME_MACHINE(
                             -- of the feature, or the feature simply doesn't draw the attention. 
     movable   boolean,
     version   int,          -- each time an edition, version increases by 1
-    feature   blob,
-    PRIMARY KEY ((date, movable), lon, lat, mod_time)
+    feature   text,
+    PRIMARY KEY ((mod_date, movable), lon, lat, mod_time)
 );

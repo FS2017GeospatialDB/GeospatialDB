@@ -9,8 +9,7 @@
 //////////////////////////////////////////////////////////////////
 
 DROP KEYSPACE IF EXISTS GLOBAL;
-CREATE KEYSPACE GLOBAL
-WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 3 };
+CREATE KEYSPACE GLOBAL WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 3 };
 
 USE GLOBAL;
 
