@@ -6,18 +6,7 @@ import ctypes
 import s2sphere
 from math import floor
 
-# some function
-"""
-def stToIJ(s, MAX):
-    return max(0, min(MAX - 1, int(floor(MAX * s))))
-
-
-def newCoord(ori, dRes):
-    return int(floor(ori / dRes)) * dRes
-"""
-
 # prepare data
-# reDep = open('new_schema.cql', 'r').read()
 fstring = open('map.json', 'r').read()
 data = geojson.loads(fstring)
 
@@ -40,68 +29,32 @@ INSERT INTO NODE_PLEVEL11 (id, part_lv11, part_lv13, time, feature)
 VALUES (%s,%s,%s,%s,%s)
 """
 
+# Connect to the Database
 cluster = Cluster()
 session = cluster.connect('global')
+
+# Clear Existing Data
 print '#####################ERASE THE DATABASE NOW######################'
-# session.execute(reDep)
 session.execute('TRUNCATE NODE_PLEVEL19')
 session.execute('TRUNCATE NODE_PLEVEL15')
 session.execute('TRUNCATE NODE_PLEVEL11')
 
-# some pre-calc
-# MAX is the original resolution level
-MAX = s2sphere.CellId.MAX_LEVEL
-print MAX
-
-# if we are zooming out, then we are decreasing the resolution
-# d_res is the changing in resolution. Calc by 2^(delta level)
-d_res19 = 1 << (MAX - 19)
-d_res16 = 1 << (MAX - 16)
-d_res15 = 1 << (MAX - 15)
-d_res13 = 1 << (MAX - 13)
-d_res11 = 1 << (MAX - 11)
-
+# Iterate through Features
 for feature in data['features']:
     tuid = uuid.uuid1()
     jsonFeature = geojson.dumps(feature)
     if regx.match(feature['id']):  # then it is a simple feature (node)
         coord = feature['geometry']['coordinates']
-        print 'latitude: ', coord[1], '\tlongitude: ', coord[0]
         latlng = s2sphere.LatLng.from_degrees(coord[1], coord[0])
+        print 'latitude: ', coord[1], '\tlongitude: ', coord[0]
+
+        # Best Solution?
         cell = s2sphere.CellId.from_lat_lng(latlng)
-
-        """
-        point = latlng.to_point()
-        face, u, v = s2sphere.xyz_to_face_uv(point)
-        s = s2sphere.CellId.uv_to_st(u)
-        t = s2sphere.CellId.uv_to_st(v)
-        i = s2sphere.CellId.st_to_ij(s)
-        j = s2sphere.CellId.st_to_ij(t)
-        cell_lv19 = s2sphere.CellId.from_face_ij(
-            face, newCoord(i, d_res19), newCoord(j, d_res19))
-        cell_lv16 = s2sphere.CellId.from_face_ij(
-            face, newCoord(i, d_res16), newCoord(j, d_res16))
-        cell_lv15 = s2sphere.CellId.from_face_ij(
-            face, newCoord(i, d_res15), newCoord(j, d_res15))
-        cell_lv13 = s2sphere.CellId.from_face_ij(
-            face, newCoord(i, d_res13), newCoord(j, d_res13))
-        cell_lv11 = s2sphere.CellId.from_face_ij(
-            face, newCoord(i, d_res11), newCoord(j, d_res11))
-        """
-
-        # Compute Encompassing Cells @ Each Level
-        rect = s2sphere.LatLngRect.from_point(latlng)
-        coverer = s2sphere.RegionCoverer()
-        coverer.min_level = coverer.max_level = 11
-        cell_lv11 = coverer.get_covering(rect)[0]
-        coverer.min_level = coverer.max_level = 13
-        cell_lv13 = coverer.get_covering(rect)[0]
-        coverer.min_level = coverer.max_level = 15
-        cell_lv15 = coverer.get_covering(rect)[0]
-        coverer.min_level = coverer.max_level = 16
-        cell_lv16 = coverer.get_covering(rect)[0]
-        coverer.min_level = coverer.max_level = 19
-        cell_lv19 = coverer.get_covering(rect)[0]
+        cell_lv19 = s2sphere.CellId.from_lat_lng(latlng).parent(19)
+        cell_lv16 = s2sphere.CellId.from_lat_lng(latlng).parent(16)
+        cell_lv15 = s2sphere.CellId.from_lat_lng(latlng).parent(15)
+        cell_lv13 = s2sphere.CellId.from_lat_lng(latlng).parent(13)
+        cell_lv11 = s2sphere.CellId.from_lat_lng(latlng).parent(11)
 
         # Convert Magic Python Type to Signed 64-bit Int
         cellID = ctypes.c_long(cell.id()).value
@@ -117,6 +70,7 @@ for feature in data['features']:
             ps_node_lv15, (cellID, cellID_15, cellID_16, tuid, jsonFeature))
         session.execute(
             ps_node_lv11, (cellID, cellID_11, cellID_13, tuid, jsonFeature))
+
     else:
         a = 0
         # print 'found a complex structure!'

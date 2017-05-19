@@ -27,6 +27,7 @@ public class GeoHandler implements GeolocationService.Iface {
   public List<Feature> getFeatures(double lBox, double rBox, double bBox, double tBox) {
 
     // Build Rectangles
+    long start = System.currentTimeMillis();
     S2LatLng bottomLeft = S2LatLng.fromDegrees(bBox, lBox);
     S2LatLng topRight = S2LatLng.fromDegrees(tBox, rBox);
     S2LatLngRect rect = new S2LatLngRect(bottomLeft, topRight);
@@ -44,7 +45,6 @@ public class GeoHandler implements GeolocationService.Iface {
     coverer.setMaxLevel(level);
     coverer.setMaxCells(Integer.MAX_VALUE);
     coverer.getCovering(rect, cells);
-    System.out.println(cells.size() + " queries @ scale=" + level);
 
     // Lookup the Cells in the Database
     List<Feature> results = new ArrayList<>();
@@ -71,6 +71,8 @@ public class GeoHandler implements GeolocationService.Iface {
       }
     }
 
+    long finish = System.currentTimeMillis();
+    System.out.println(cells.size() + " queries @ scale=" + level + " in " + (finish - start) + "ms");
     return results;
   }
 }
