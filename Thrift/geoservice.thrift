@@ -1,13 +1,11 @@
-namespace java api
+namespace java edu.mines.csci370.api
 
 /**
  * Feature struct for communication with client.
  */
 struct Feature {
-      1: i64 id,
-      2: double latitude,
-      3: double longitude,
-      4: binary payload
+      1: i64 time,
+      2: string json
 }
 
 /**

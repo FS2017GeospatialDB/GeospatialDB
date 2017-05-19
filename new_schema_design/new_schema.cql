@@ -50,8 +50,8 @@ USE GLOBAL;
 -- ON AVG (1 FEATURE PER M2) 465 FEATURES STORED
 DROP TABLE IF EXISTS NODE_PLEVEL19;
 CREATE TABLE NODE_PLEVEL19(
-    id          decimal,
-    part_lv19   decimal,
+    id          bigint,
+    part_lv19   bigint,
     time        timeuuid,
     feature     text,
     PRIMARY KEY (part_lv19, id, time)
@@ -64,12 +64,12 @@ CREATE TABLE NODE_PLEVEL19(
 -- EACH PARTION COVERS ~30K FEATURES
 DROP TABLE IF EXISTS NODE_PLEVEL15;
 CREATE TABLE NODE_PLEVEL15( 
-    id          decimal,
-    part_lv15   decimal,
-    part_lv16   decimal,
+    id          bigint,
+    part_lv15   bigint,
+    part_lv16   bigint,
     time        timeuuid,
     feature     text,
-    PRIMARY KEY ((part_lv15, part_lv16), id, time)
+    PRIMARY KEY (part_lv15, id, time)
 );
 
 
@@ -80,11 +80,11 @@ CREATE TABLE NODE_PLEVEL15(
 -- AFFORDABLE. IF FURTHER REDUCE WILL REDUCE SCALABILITY
 DROP TABLE IF EXISTS NODE_PLEVEL11;
 CREATE TABLE NODE_PLEVEL11( 
-    id          decimal,
-    part_lv11   decimal,
-    part_lv13   decimal,
+    id          bigint,
+    part_lv11   bigint,
+    part_lv13   bigint,
     time        timeuuid,
     feature     text,
-    PRIMARY KEY ((part_lv11, part_lv13), id, time)
+    PRIMARY KEY (part_lv11, id, time)
 );
 

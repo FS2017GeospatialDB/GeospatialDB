@@ -2,19 +2,19 @@ from cassandra.cluster import Cluster
 import geojson
 import re
 import uuid
+import ctypes
 import s2sphere
 from math import floor
 
 # some function
-
-
+"""
 def stToIJ(s, MAX):
     return max(0, min(MAX - 1, int(floor(MAX * s))))
 
 
 def newCoord(ori, dRes):
     return int(floor(ori / dRes)) * dRes
-
+"""
 
 # prepare data
 # reDep = open('new_schema.cql', 'r').read()
@@ -66,9 +66,11 @@ for feature in data['features']:
     jsonFeature = geojson.dumps(feature)
     if regx.match(feature['id']):  # then it is a simple feature (node)
         coord = feature['geometry']['coordinates']
-        print 'latitude: ', coord[1], 'longitued: ', coord[0]
+        print 'latitude: ', coord[1], '\tlongitude: ', coord[0]
         latlng = s2sphere.LatLng.from_degrees(coord[1], coord[0])
         cell = s2sphere.CellId.from_lat_lng(latlng)
+
+        """
         point = latlng.to_point()
         face, u, v = s2sphere.xyz_to_face_uv(point)
         s = s2sphere.CellId.uv_to_st(u)
@@ -85,13 +87,36 @@ for feature in data['features']:
             face, newCoord(i, d_res13), newCoord(j, d_res13))
         cell_lv11 = s2sphere.CellId.from_face_ij(
             face, newCoord(i, d_res11), newCoord(j, d_res11))
+        """
+
+        # Compute Encompassing Cells @ Each Level
+        rect = s2sphere.LatLngRect.from_point(latlng)
+        coverer = s2sphere.RegionCoverer()
+        coverer.min_level = coverer.max_level = 11
+        cell_lv11 = coverer.get_covering(rect)[0]
+        coverer.min_level = coverer.max_level = 13
+        cell_lv13 = coverer.get_covering(rect)[0]
+        coverer.min_level = coverer.max_level = 15
+        cell_lv15 = coverer.get_covering(rect)[0]
+        coverer.min_level = coverer.max_level = 16
+        cell_lv16 = coverer.get_covering(rect)[0]
+        coverer.min_level = coverer.max_level = 19
+        cell_lv19 = coverer.get_covering(rect)[0]
+
+        # Convert Magic Python Type to Signed 64-bit Int
+        cellID = ctypes.c_long(cell.id()).value
+        cellID_11 = ctypes.c_long(cell_lv11.id()).value
+        cellID_13 = ctypes.c_long(cell_lv13.id()).value
+        cellID_15 = ctypes.c_long(cell_lv15.id()).value
+        cellID_16 = ctypes.c_long(cell_lv16.id()).value
+        cellID_19 = ctypes.c_long(cell_lv19.id()).value
 
         session.execute(
-            ps_node_lv19, (cell.id(), cell_lv19.id(), tuid, jsonFeature))
+            ps_node_lv19, (cellID, cellID_19, tuid, jsonFeature))
         session.execute(
-            ps_node_lv15, (cell.id(), cell_lv15.id(), cell_lv16.id(), tuid, jsonFeature))
+            ps_node_lv15, (cellID, cellID_15, cellID_16, tuid, jsonFeature))
         session.execute(
-            ps_node_lv11, (cell.id(), cell_lv11.id(), cell_lv13.id(), tuid, jsonFeature))
+            ps_node_lv11, (cellID, cellID_11, cellID_13, tuid, jsonFeature))
     else:
         a = 0
         # print 'found a complex structure!'

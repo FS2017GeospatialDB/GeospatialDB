@@ -6,22 +6,14 @@
 
 
 Feature = function(args) {
-  this.id = null;
-  this.latitude = null;
-  this.longitude = null;
-  this.payload = null;
+  this.time = null;
+  this.json = null;
   if (args) {
-    if (args.id !== undefined) {
-      this.id = args.id;
+    if (args.time !== undefined) {
+      this.time = args.time;
     }
-    if (args.latitude !== undefined) {
-      this.latitude = args.latitude;
-    }
-    if (args.longitude !== undefined) {
-      this.longitude = args.longitude;
-    }
-    if (args.payload !== undefined) {
-      this.payload = args.payload;
+    if (args.json !== undefined) {
+      this.json = args.json;
     }
   }
 };
@@ -41,28 +33,14 @@ Feature.prototype.read = function(input) {
     {
       case 1:
       if (ftype == Thrift.Type.I64) {
-        this.id = input.readI64().value;
+        this.time = input.readI64().value;
       } else {
         input.skip(ftype);
       }
       break;
       case 2:
-      if (ftype == Thrift.Type.DOUBLE) {
-        this.latitude = input.readDouble().value;
-      } else {
-        input.skip(ftype);
-      }
-      break;
-      case 3:
-      if (ftype == Thrift.Type.DOUBLE) {
-        this.longitude = input.readDouble().value;
-      } else {
-        input.skip(ftype);
-      }
-      break;
-      case 4:
       if (ftype == Thrift.Type.STRING) {
-        this.payload = input.readString().value;
+        this.json = input.readString().value;
       } else {
         input.skip(ftype);
       }
@@ -78,24 +56,14 @@ Feature.prototype.read = function(input) {
 
 Feature.prototype.write = function(output) {
   output.writeStructBegin('Feature');
-  if (this.id !== null && this.id !== undefined) {
-    output.writeFieldBegin('id', Thrift.Type.I64, 1);
-    output.writeI64(this.id);
+  if (this.time !== null && this.time !== undefined) {
+    output.writeFieldBegin('time', Thrift.Type.I64, 1);
+    output.writeI64(this.time);
     output.writeFieldEnd();
   }
-  if (this.latitude !== null && this.latitude !== undefined) {
-    output.writeFieldBegin('latitude', Thrift.Type.DOUBLE, 2);
-    output.writeDouble(this.latitude);
-    output.writeFieldEnd();
-  }
-  if (this.longitude !== null && this.longitude !== undefined) {
-    output.writeFieldBegin('longitude', Thrift.Type.DOUBLE, 3);
-    output.writeDouble(this.longitude);
-    output.writeFieldEnd();
-  }
-  if (this.payload !== null && this.payload !== undefined) {
-    output.writeFieldBegin('payload', Thrift.Type.STRING, 4);
-    output.writeString(this.payload);
+  if (this.json !== null && this.json !== undefined) {
+    output.writeFieldBegin('json', Thrift.Type.STRING, 2);
+    output.writeString(this.json);
     output.writeFieldEnd();
   }
   output.writeFieldStop();

@@ -6,6 +6,7 @@ import java.util.List;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.PreparedStatement;
 
 import com.google.common.geometry.S2Region;
 import com.google.common.geometry.S2CellId;
@@ -36,36 +37,40 @@ public class GeoHandler implements GeolocationService.Iface {
     if (area / SCALE_19 > 2d) level = 15;
     if (area / SCALE_15 > 2d) level = 11;
 
-    // Get Area Covering
+    // Get Cells Covering Area
+    ArrayList<S2CellId> cells = new ArrayList<>();
     S2RegionCoverer coverer = new S2RegionCoverer();
     coverer.setMinLevel(level);
     coverer.setMaxLevel(level);
     coverer.setMaxCells(Integer.MAX_VALUE);
-    ArrayList<S2CellId> cells = new ArrayList<>();
-    System.out.print("starting...");
     coverer.getCovering(rect, cells);
+    System.out.println(cells.size() + " queries @ scale=" + level);
 
-    for (S2CellId id : cells) {
-      System.out.println(id.toString());
-    }
-
-    /*List<Feature> results = new ArrayList<>();
+    // Lookup the Cells in the Database
+    List<Feature> results = new ArrayList<>();
     Session session = Database.getSession();
-    
-    ResultSet rs = session.execute("SELECT * FROM features.features");
-    while (!rs.isExhausted()) {
+    PreparedStatement statement = Database.prepareFromCache(
+      "SELECT id, unixTimestampOf(time) AS time, feature FROM global.NODE_PLEVEL" + (level) + " WHERE part_lv" + (level) + "=?");
+
+    // Execute the Query
+    for (S2CellId cell : cells) {
+      ResultSet rs = session.execute(statement.bind(cell.id()));
+
+      while (!rs.isExhausted()) {
         Row row = rs.one();
         Feature feature = new Feature(
-              row.getLong("id"),
-              row.getDouble("latitude"),
-              row.getDouble("longitude"),
-              null);
+          row.getLong("time"),
+          row.getString("feature"));
 
-        if (feature.getLatitude() > lBox && feature.getLatitude() < rBox
-      && feature.getLongitude() > bBox && feature.getLongitude() < tBox)
-        results.add(feature);
-    }*/
-    
-    return new ArrayList<Feature>();
+        // Check User-Requested Bounds
+        S2LatLng loc = (new S2CellId(row.getLong("id"))).toLatLng();
+        if (loc.latDegrees() > bBox && loc.latDegrees() < tBox
+          && loc.lngDegrees() > lBox && loc.lngDegrees() < rBox) {
+                results.add(feature);
+        }
+      }
+    }
+
+    return results;
   }
 }
