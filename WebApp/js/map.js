@@ -15,8 +15,11 @@ var map = (function() {
 		// Listen for Feature Clicks
 		map.data.addListener('click', function(event) {
 			infoWindow.setPosition(event.latLng);
-			infoWindow.setContent('<b>Id:</b> ' + event.feature.getId());
 			infoWindow.open(map);
+
+			event.feature.toGeoJson(function(obj) {
+				infoWindow.setContent('<b>Id:</b> ' + event.feature.getId() + '<br><br><b>Json:</b> ' + JSON.stringify(obj));
+			});
 		});
 
 		// Style the Map
