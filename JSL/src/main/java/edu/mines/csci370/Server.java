@@ -76,13 +76,13 @@ public class Server {
 
       // Check the HTTP Method
       String method = request.getRequestLine().getMethod().toUpperCase();
-      if (!method.equals("GET") && !method.equals("HEAD") && !method.equals("POST")) {
+      if (!method.equals("GET") && !method.equals("POST") && !method.equals("OPTIONS")) {
           throw new MethodNotSupportedException(method + " method not supported");
       }
 
       // Handle "service" Requests
       String target = request.getRequestLine().getUri();
-      if (target.startsWith("/service")) {
+      if (target.startsWith("/service") && method.equals("POST")) {
        
         HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
         byte[] entityContent = EntityUtils.toByteArray(entity);
@@ -99,6 +99,13 @@ public class Server {
         body.setContentType("text/html; charset=UTF-8");
         response.setEntity(body);
         response.addHeader("Access-Control-Allow-Origin", "*");
+      }
+
+      // Handle CORS OPTIONS Requests
+      else if (method.equals("OPTIONS")) {
+        response.addHeader("Access-Control-Allow-Headers", "Origin,X-Requested-With,Content-Type,Accept");
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        response.addHeader("Allow", "GET,POST,OPTIONS");
       }
     }
  

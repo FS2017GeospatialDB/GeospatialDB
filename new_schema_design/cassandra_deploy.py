@@ -43,37 +43,40 @@ session.execute('TRUNCATE NODE_PLEVEL11')
 for feature in data['features']:
     tuid = uuid.uuid1()
     jsonFeature = geojson.dumps(feature)
-    if regx.match(feature['id']):  # then it is a simple feature (node)
-        coord = feature['geometry']['coordinates']
-        latlng = s2sphere.LatLng.from_degrees(coord[1], coord[0])
-        print 'latitude: ', coord[1], '\tlongitude: ', coord[0]
 
-        # Best Solution?
-        cell = s2sphere.CellId.from_lat_lng(latlng)
-        cell_lv19 = s2sphere.CellId.from_lat_lng(latlng).parent(19)
-        cell_lv16 = s2sphere.CellId.from_lat_lng(latlng).parent(16)
-        cell_lv15 = s2sphere.CellId.from_lat_lng(latlng).parent(15)
-        cell_lv13 = s2sphere.CellId.from_lat_lng(latlng).parent(13)
-        cell_lv11 = s2sphere.CellId.from_lat_lng(latlng).parent(11)
+    # if regx.match(feature['id']):  # then it is a simple feature (node)
+    coord = feature['geometry']['coordinates']
+    while isinstance(coord[0], list):
+        coord = coord[0]
+    latlng = s2sphere.LatLng.from_degrees(coord[1], coord[0])
+    print 'latitude: ', coord[1], '\tlongitude: ', coord[0]
 
-        # Convert Magic Python Type to Signed 64-bit Int
-        cellID = ctypes.c_long(cell.id()).value
-        cellID_11 = ctypes.c_long(cell_lv11.id()).value
-        cellID_13 = ctypes.c_long(cell_lv13.id()).value
-        cellID_15 = ctypes.c_long(cell_lv15.id()).value
-        cellID_16 = ctypes.c_long(cell_lv16.id()).value
-        cellID_19 = ctypes.c_long(cell_lv19.id()).value
+    # Best Solution?
+    cell = s2sphere.CellId.from_lat_lng(latlng)
+    cell_lv19 = s2sphere.CellId.from_lat_lng(latlng).parent(19)
+    cell_lv16 = s2sphere.CellId.from_lat_lng(latlng).parent(16)
+    cell_lv15 = s2sphere.CellId.from_lat_lng(latlng).parent(15)
+    cell_lv13 = s2sphere.CellId.from_lat_lng(latlng).parent(13)
+    cell_lv11 = s2sphere.CellId.from_lat_lng(latlng).parent(11)
 
-        session.execute(
-            ps_node_lv19, (cellID, cellID_19, tuid, jsonFeature))
-        session.execute(
-            ps_node_lv15, (cellID, cellID_15, cellID_16, tuid, jsonFeature))
-        session.execute(
-            ps_node_lv11, (cellID, cellID_11, cellID_13, tuid, jsonFeature))
+    # Convert Magic Python Type to Signed 64-bit Int
+    cellID = ctypes.c_long(cell.id()).value
+    cellID_11 = ctypes.c_long(cell_lv11.id()).value
+    cellID_13 = ctypes.c_long(cell_lv13.id()).value
+    cellID_15 = ctypes.c_long(cell_lv15.id()).value
+    cellID_16 = ctypes.c_long(cell_lv16.id()).value
+    cellID_19 = ctypes.c_long(cell_lv19.id()).value
 
-    else:
-        a = 0
-        # print 'found a complex structure!'
-        # print feature['geometry']['coordinates']
+    session.execute(
+        ps_node_lv19, (cellID, cellID_19, tuid, jsonFeature))
+    session.execute(
+        ps_node_lv15, (cellID, cellID_15, cellID_16, tuid, jsonFeature))
+    session.execute(
+        ps_node_lv11, (cellID, cellID_11, cellID_13, tuid, jsonFeature))
+
+#    else:
+#       a = 0
+#       print 'found a complex structure!'
+#       print feature['geometry']['coordinates']
 
 cluster.shutdown()
