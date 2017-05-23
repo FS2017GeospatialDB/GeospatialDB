@@ -34,9 +34,7 @@ public class GeoHandler implements GeolocationService.Iface {
 
     // Determine Necessary Level
     double area = rect.area() * S2LatLng.EARTH_RADIUS_METERS * S2LatLng.EARTH_RADIUS_METERS;
-    int level = 19;
-    if (area / SCALE_19 > 2d) level = 15;
-    if (area / SCALE_15 > 2d) level = 11;
+    int level = 16;
 
     // Get Cells Covering Area
     ArrayList<S2CellId> cells = new ArrayList<>();
@@ -50,24 +48,19 @@ public class GeoHandler implements GeolocationService.Iface {
     List<Feature> results = new ArrayList<>();
     Session session = Database.getSession();
     PreparedStatement statement = Database.prepareFromCache(
-      "SELECT id, unixTimestampOf(time) AS time, feature FROM global.NODE_PLEVEL" + (level) + " WHERE part_lv" + (level) + "=?");
+      "SELECT unixTimestampOf(time) AS time, json FROM global.slave WHERE level=? AND s2_id=?");
 
     // Execute the Query
     for (S2CellId cell : cells) {
-      ResultSet rs = session.execute(statement.bind(cell.id()));
+      ResultSet rs = session.execute(statement.bind(level, cell.id()));
 
       while (!rs.isExhausted()) {
         Row row = rs.one();
         Feature feature = new Feature(
           row.getLong("time"),
-          row.getString("feature"));
+          row.getString("json"));
 
-        // Check User-Requested Bounds
-        S2LatLng loc = (new S2CellId(row.getLong("id"))).toLatLng();
-        if (loc.latDegrees() > bBox && loc.latDegrees() < tBox
-          && loc.lngDegrees() > lBox && loc.lngDegrees() < rBox) {
-                results.add(feature);
-        }
+        results.add(feature);
       }
     }
 
