@@ -7,3 +7,9 @@ TABLE features {
 
 	PRIMARY KEY((level, s2ID), time, id)
 }
+
+# For this schema, lets use:
+# 4, 8, 12, 16
+#
+#
+#
