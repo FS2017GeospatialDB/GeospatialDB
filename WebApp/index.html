@@ -39,7 +39,7 @@
                 <br>
                 <div class="col-sm-12">
                   <div class="row toggleDiv">
-                    <label class="toggle" id="hqToggle">
+                    <label class="toggle" id="hqToggle" onchange="actHist()">
                       <input type="checkbox">
                         <span class="handle">
                         </span>
@@ -49,16 +49,16 @@
                   </div>
                 </div>
                 <div class="col-sm-6 smallPadding">
-                  <input class="form-control" type="text" placeholder="MM/DD/YYYY" id="calendar" oninput="validateDate('calendar')"/>
+                  <input class="form-control" type="text" placeholder="MM/DD/YYYY" id="calendar" oninput="validateDate('calendar')" disabled/>
                 </div>
                 <div class="col-sm-2 smallPadding">
-                  <input class="form-control" placeholder="hh" type="text" id="ts_hours" oninput="validate('ts_hours', 0, 24)">
+                  <input class="form-control" placeholder="hh" type="text" id="ts_hours" oninput="validate('ts_hours', 0, 24)" disabled>
                 </div>
                 <div class="col-sm-2 smallPadding">
-                  <input class="form-control" placeholder="mm" type="text" id="ts_minutes" oninput="validate('ts_minutes', 0, 60)">
+                  <input class="form-control" placeholder="mm" type="text" id="ts_minutes" oninput="validate('ts_minutes', 0, 60)" disabled>
                 </div>
                 <div class="col-sm-2 smallPadding">
-                  <input class="form-control" placeholder="ss" type="text" id="ts_seconds" oninput="validate('ts_seconds', 0, 60)">
+                  <input class="form-control" placeholder="ss" type="text" id="ts_seconds" oninput="validate('ts_seconds', 0, 60)" disabled>
                 </div>
                 <br><br>
                 <div class="row">
@@ -66,7 +66,7 @@
                     <button type="button" class="btn btn-block" style="white-spce: normal;word-wrap: break-word">Cancel</button>
                   </div>
                   <div class="col-12 col-lg-6">
-                    <button type="button" class="btn btn-primary btn-block" onclick="map.submitQuery()" id="submit" disabled>Submit</button>
+                    <button type="button" class="btn btn-primary btn-block" onclick="map.submitQuery()" id="submit">Submit</button>
                   </div>
                 </div>
               </div>
@@ -84,7 +84,7 @@
 		function validateDate(id) {
 			var box = document.getElementById(id);
 			var date = new Date(box.value);
-			if (!date) {
+			if (!box.value) {
 				box.parentNode.classList.remove("has-success");
 				box.parentNode.classList.remove("has-error");
 			} else if (date != "Invalid Date") {
@@ -117,6 +117,10 @@
 			hours = document.getElementById('ts_hours');
 			minutes = document.getElementById('ts_minutes');
 			seconds = document.getElementById('ts_seconds');
+			if (!document.getElementById('hqToggle').children[0].checked) {
+					document.getElementById('submit').disabled = false;
+					return;
+			}
 			if (date.parentNode.classList.contains("has-success")) {
 				if (!hours.parentNode.classList.contains("has-error") && !minutes.parentNode.classList.contains("has-error") && !seconds.parentNode.classList.contains("has-error")) {
 					document.getElementById('submit').disabled = false;
@@ -128,7 +132,24 @@
 			else {
 				document.getElementById('submit').disabled = true;
 			}
+		}
 
+		function actHist() {
+			checkbox = document.getElementById('hqToggle').children[0];
+			cal = document.getElementById('calendar');
+			hours = document.getElementById('ts_hours');
+			min = document.getElementById('ts_minutes');
+			sec = document.getElementById('ts_seconds');
+			if (checkbox.checked) {
+				cal.disabled = hours.disabled = min.disabled = sec.disabled = false;
+			} else {
+				cal.disabled = hours.disabled = min.disabled = sec.disabled = true;
+				calendar.value = hours.value = min.value = sec.value = "";
+				validateDate('calendar');
+				validate('ts_hours', 0, 24);
+				validate('ts_minutes', 0, 60);
+				validate('ts_seconds', 0, 60);
+			}
 		}
 	</script>
 
