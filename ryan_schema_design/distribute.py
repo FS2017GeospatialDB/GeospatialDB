@@ -28,7 +28,6 @@ def distribute():
 
     # Loop over Master Features
     for row in session.execute(master_select_ps):
-
         # Extract Row Identification
         json = geojson.loads(row.json)
         osm_id = row.osm_id
