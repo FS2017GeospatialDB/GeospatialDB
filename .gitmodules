@@ -1,0 +1,3 @@
+[submodule "JSL/lib/s2geo"]
+	path = JSL/lib/s2geo
+	url = https://github.com/google/s2-geometry-library-java.git
