@@ -16,3 +16,12 @@
 .nav-tabs {
   background-color: #3BAFDA;
 }
+
+.smallPadding {
+  padding: 1px;
+}
+
+.toggleDiv {
+  display: flex;
+  align-items: center;
+}

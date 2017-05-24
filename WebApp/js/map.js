@@ -30,6 +30,13 @@ var map = (function() {
 	}
 
 	function submitQuery() {
+		var date = document.getElementById('calendar').value;
+		timestamp = new Date(date);
+		timestamp.setHours(document.getElementById('ts_hours').value);
+		timestamp.setMinutes(document.getElementById('ts_minutes').value);
+		timestamp.setSeconds(document.getElementById('ts_seconds').value);
+		console.log(timestamp.getTime());
+
 		var bounds = map.getBounds();
 		var east = bounds.getNorthEast().lng();
 		var west = bounds.getSouthWest().lng();
@@ -39,7 +46,7 @@ var map = (function() {
 		var transport = new Thrift.TXHRTransport("http://localhost:8000/service");
 		var protocol = new Thrift.TJSONProtocol(transport);
 		var client = new GeolocationServiceClient(protocol);
-		var result = client.getFeatures(west, east, south, north);
+		var result = client.getFeatures(west, east, south, north, timestamp.getTime());
 
 		// Clear the Map
 		map.data.forEach(function(feature) {
