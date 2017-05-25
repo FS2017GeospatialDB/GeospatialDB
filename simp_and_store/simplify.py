@@ -1,3 +1,4 @@
+'''high-performance Python polyline simplification library'''
 
 
 def getSquareDistance(p1, p2):
@@ -56,8 +57,8 @@ def simplifyRadialDistance(points, tolerance):
 
 def simplifyDouglasPeucker(points, tolerance):
     length = len(points)
-    markers = [0] * length  # Maybe not the most efficent way?
-
+    markers = [0] * length
+    
     first = 0
     last = length - 1
 
@@ -73,7 +74,8 @@ def simplifyDouglasPeucker(points, tolerance):
         max_sqdist = 0
 
         for i in range(first, last):
-            sqdist = getSquareSegmentDistance(points[i], points[first], points[last])
+            sqdist = getSquareSegmentDistance(
+                points[i], points[first], points[last])
 
             if sqdist > max_sqdist:
                 index = i
@@ -107,12 +109,11 @@ def simplifyDouglasPeucker(points, tolerance):
     return new_points
 
 
-def simplify(points, tolerance=0.1, highestQuality=True):
+def simplify(points, tolerance=0.1, highest_quality=True):
+    '''Simplify the feature. Based on whether highest quality flag is set,
+     it applies simplification based on radial distance (off), or douglas peucher (on)'''
     sqtolerance = tolerance * tolerance
-
-    if not highestQuality:
+    if not highest_quality:
         points = simplifyRadialDistance(points, sqtolerance)
-
     points = simplifyDouglasPeucker(points, sqtolerance)
-
     return points

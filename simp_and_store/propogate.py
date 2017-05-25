@@ -1,12 +1,10 @@
-import time
 import ctypes
 import geojson
 import s2sphere
-import cassandra;
-
+import cassandra
+import simplify
 from cassandra.cluster import Cluster
 
-MAX_DATE = (1 << 47)
 
 def propogate():
     # Connect to the Database

@@ -1,7 +1,6 @@
 '''Main file of loading the data'''
 
 import sys
-import ctypes
 import geojson
 from cassandra.cluster import Cluster
 

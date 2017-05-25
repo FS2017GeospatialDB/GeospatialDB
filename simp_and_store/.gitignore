@@ -1,2 +1,5 @@
 # just too many copies of map.json, waste of spaces
 map.json
+
+# python compile file
+*.pyc
