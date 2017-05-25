@@ -39,7 +39,7 @@
                 <br>
                 <div class="col-sm-12">
                   <div class="row toggleDiv">
-                    <label class="toggle" id="hqToggle">
+                    <label class="toggle" id="hqToggle" onchange="actHist()">
                       <input type="checkbox">
                         <span class="handle">
                         </span>
@@ -48,25 +48,26 @@
                     <label for="hqToggle" style="padding-left: 10px";>Historical Query</label>
                   </div>
                 </div>
-                <div class="col-sm-6 smallPadding">
-                  <input class="form-control" type="text" placeholder="MM/DD/YYYY" id="calendar" oninput="validateDate('calendar')"/>
+                <div class="row container-fluid">
+                  <div class="col-md-6 smallPadding">
+                    <input class="form-control" type="text" placeholder="MM/DD/YYYY" id="calendar" oninput="validateDate('calendar')" disabled/>
+                  </div>
+                  <div class="col-md-2 smallPadding">
+                    <input class="form-control" placeholder="hh" type="text" id="ts_hours" oninput="validate('ts_hours', 0, 24)" disabled>
+                  </div>
+                  <div class="col-md-2 smallPadding">
+                    <input class="form-control" placeholder="mm" type="text" id="ts_minutes" oninput="validate('ts_minutes', 0, 60)" disabled>
+                  </div>
+                  <div class="col-md-2 smallPadding">
+                    <input class="form-control" placeholder="ss" type="text" id="ts_seconds" oninput="validate('ts_seconds', 0, 60)" disabled>
+                  </div>
                 </div>
-                <div class="col-sm-2 smallPadding">
-                  <input class="form-control" placeholder="hh" type="text" id="ts_hours" oninput="validate('ts_hours', 0, 24)">
-                </div>
-                <div class="col-sm-2 smallPadding">
-                  <input class="form-control" placeholder="mm" type="text" id="ts_minutes" oninput="validate('ts_minutes', 0, 60)">
-                </div>
-                <div class="col-sm-2 smallPadding">
-                  <input class="form-control" placeholder="ss" type="text" id="ts_seconds" oninput="validate('ts_seconds', 0, 60)">
-                </div>
-                <br><br>
                 <div class="row">
                   <div class="col-12 col-lg-6">
                     <button type="button" class="btn btn-block" style="white-spce: normal;word-wrap: break-word">Cancel</button>
                   </div>
                   <div class="col-12 col-lg-6">
-                    <button type="button" class="btn btn-primary btn-block" onclick="map.submitQuery()" id="submit" disabled>Submit</button>
+                    <button type="button" class="btn btn-primary btn-block" onclick="map.submitQuery()" id="submit">Submit</button>
                   </div>
                 </div>
               </div>
@@ -80,57 +81,7 @@
     <script src="api/GeolocationService.js"></script>
     <script src="api/geoservice_types.js"></script>
 
-	<script>
-		function validateDate(id) {
-			var box = document.getElementById(id);
-			var date = new Date(box.value);
-			if (!date) {
-				box.parentNode.classList.remove("has-success");
-				box.parentNode.classList.remove("has-error");
-			} else if (date != "Invalid Date") {
-				box.parentNode.classList.add("has-success");
-				box.parentNode.classList.remove("has-error");
-			} else {
-				box.parentNode.classList.add("has-error");
-				box.parentNode.classList.remove("has-success");
-			}
-			validateForm();
-		}
-		function validate(id, min, max) {
-			var box = document.getElementById(id);
-			var hour = Number(box.value);
-			if (!box.value) {
-				box.parentNode.classList.remove("has-success");
-				box.parentNode.classList.remove("has-error");
-			} else if (Math.floor(hour) == hour && hour >= min && hour <= (max - 1)) {
-				box.parentNode.classList.add("has-success");
-				box.parentNode.classList.remove("has-error");
-			} else {
-				box.parentNode.classList.add("has-error");
-				box.parentNode.classList.remove("has-success");
-			}
-			validateForm();
-		}
-
-		function validateForm() {
-			date = document.getElementById('calendar');
-			hours = document.getElementById('ts_hours');
-			minutes = document.getElementById('ts_minutes');
-			seconds = document.getElementById('ts_seconds');
-			if (date.parentNode.classList.contains("has-success")) {
-				if (!hours.parentNode.classList.contains("has-error") && !minutes.parentNode.classList.contains("has-error") && !seconds.parentNode.classList.contains("has-error")) {
-					document.getElementById('submit').disabled = false;
-				}
-				else {
-					document.getElementById('submit').disabled = true;
-				}
-			}
-			else {
-				document.getElementById('submit').disabled = true;
-			}
-
-		}
-	</script>
+	<script src="js/hquery.js"></script>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
