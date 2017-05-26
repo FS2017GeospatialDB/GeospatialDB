@@ -37,9 +37,18 @@
             <div class="panel-body">
               <div class="container-fluid">
                 <br>
-                <div class="col-sm-12">
-                  <div class="row toggleDiv">
-                    <label class="toggle" id="hqToggle" onchange="actHist()">
+                <div class="row col-md-12">
+                  <div class="toggleDiv col-md-6">
+                    <label class="toggle" id="custToggle" onchange="toggle('custToggle', 'custBounds')">
+                      <input type="checkbox">
+                        <span class="handle">
+                        </span>
+                      </input>
+                    </label>
+                    <label for="custToggle" style="padding-left: 10px";>Custom Bounds</label>
+                  </div>
+                  <div class="toggleDiv col-md-6">
+                    <label class="toggle" id="hqToggle" onchange="toggle('hqToggle', 'hquery')">
                       <input type="checkbox">
                         <span class="handle">
                         </span>
@@ -48,18 +57,32 @@
                     <label for="hqToggle" style="padding-left: 10px";>Historical Query</label>
                   </div>
                 </div>
-                <div class="row container-fluid">
+                <div class="row container-fluid" id="custBounds" style="display: none">
                   <div class="col-md-6 smallPadding">
-                    <input class="form-control" type="text" placeholder="MM/DD/YYYY" id="calendar" oninput="validateDate('calendar')" disabled/>
+                    <input class="form-control" placeholder="long: left" type="text" id="lBox" oninput="validate()">
+                  </div>
+                  <div class="col-md-6 smallPadding">
+                    <input class="form-control" placeholder="long: right" type="text" id="rBox" oninput="validate()">
+                  </div>
+                  <div class="col-md-6 smallPadding">
+                    <input class="form-control" placeholder="lat: bottom" type="text" id="tBox" oninput="validate()">
+                  </div>
+                  <div class="col-md-6 smallPadding">
+                    <input class="form-control" placeholder="lat: top" type="text" id="bBox" oninput="validate()">
+                  </div>
+                </div>
+                <div class="row container-fluid" id="hquery" style="display: none">
+                  <div class="col-md-6 smallPadding">
+                    <input class="form-control" type="text" placeholder="MM/DD/YYYY" id="calendar" oninput="validate()"/>
                   </div>
                   <div class="col-md-2 smallPadding">
-                    <input class="form-control" placeholder="hh" type="text" id="ts_hours" oninput="validate('ts_hours', 0, 24)" disabled>
+                    <input class="form-control" placeholder="hh" type="text" id="ts_hours" oninput="validate()">
                   </div>
                   <div class="col-md-2 smallPadding">
-                    <input class="form-control" placeholder="mm" type="text" id="ts_minutes" oninput="validate('ts_minutes', 0, 60)" disabled>
+                    <input class="form-control" placeholder="mm" type="text" id="ts_minutes" oninput="validate()">
                   </div>
                   <div class="col-md-2 smallPadding">
-                    <input class="form-control" placeholder="ss" type="text" id="ts_seconds" oninput="validate('ts_seconds', 0, 60)" disabled>
+                    <input class="form-control" placeholder="ss" type="text" id="ts_seconds" oninput="validate()">
                   </div>
                 </div>
                 <div class="row">
@@ -81,7 +104,7 @@
     <script src="api/GeolocationService.js"></script>
     <script src="api/geoservice_types.js"></script>
 
-	<script src="js/hquery.js"></script>
+    <script src="js/customQs.js"></script>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
@@ -90,18 +113,18 @@
     <script src="js/jquery-1.12.4.js"></script>
     <script src="js/jquery-ui.js"></script>
     <script>
-		$( "#calendar" ).datepicker({
-			onSelect: function(d, i) {
-				if (d !== i.lastVal){
-					$(this).change();
-				}
-			}
-		});
+        $( "#calendar" ).datepicker({
+            onSelect: function(d, i) {
+                if (d !== i.lastVal){
+                    $(this).change();
+                }
+            }
+        });
 
-		$('#calendar').change(function(){
-			validateDate('calendar');
-		});
-	</script>
+        $('#calendar').change(function(){
+            validate();
+        });
+    </script>
 
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="js/bootstrap.min.js"></script>
