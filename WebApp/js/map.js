@@ -29,7 +29,47 @@ var map = (function() {
 		});
 	}
 
-	function submitQuery() {
+	function submitPointQuery() {
+		var date = document.getElementById('calendar').value;
+		timestamp = new Date(date);
+		timestamp.setHours(document.getElementById('ts_hours').value);
+		timestamp.setMinutes(document.getElementById('ts_minutes').value);
+		timestamp.setSeconds(document.getElementById('ts_seconds').value);
+		console.log(timestamp.getTime());
+
+		var center = map.getCenter();
+		var lat = center.lat();
+		var lng = center.lng();
+
+		var transport = new Thrift.TXHRTransport("http://localhost:8000/service");
+		var protocol = new Thrift.TJSONProtocol(transport);
+		var client = new GeolocationServiceClient(protocol);
+		var result = client.getCell(lat, lng, Date.now() /*timestamp.getTime()*/);
+
+		// Clear the Map
+		map.data.forEach(function(feature) {
+			map.data.remove(feature);
+		});
+
+		// Add new GeoJSON's to Map
+		for (var i = 0; i < result.length; i++) {
+			json = JSON.parse(result[i].json);
+
+			// GeoJSON Formatting Hack
+			for (var j = 0; j < json.geometry.coordinates.length; j++) {
+				if (json.geometry.type === 'LineString' && json.geometry.coordinates[j].length > 2)
+					json.geometry.coordinates[j] = json.geometry.coordinates[j].slice(0, 2);
+				for (var k = 0; k < json.geometry.coordinates[j].length; k++)
+					if (json.geometry.type === 'Polygon' && json.geometry.coordinates[j][k].length > 2)
+						json.geometry.coordinates[j][k] = json.geometry.coordinates[j][k].slice(0, 2);
+			}
+
+			console.log(JSON.stringify(json));
+			map.data.addGeoJson(json);
+		}
+	}
+
+	function submitRegionQuery() {
 		var date = document.getElementById('calendar').value;
 		timestamp = new Date(date);
 		timestamp.setHours(document.getElementById('ts_hours').value);
@@ -46,7 +86,7 @@ var map = (function() {
 		var transport = new Thrift.TXHRTransport("http://localhost:8000/service");
 		var protocol = new Thrift.TJSONProtocol(transport);
 		var client = new GeolocationServiceClient(protocol);
-		var result = client.getFeatures(west, east, south, north, timestamp.getTime());
+		var result = client.getFeatures(west, east, south, north, Date.now() /*timestamp.getTime()*/);
 
 		// Clear the Map
 		map.data.forEach(function(feature) {
@@ -55,13 +95,25 @@ var map = (function() {
 
 		// Add new GeoJSON's to Map
 		for (var i = 0; i < result.length; i++) {
-			map.data.addGeoJson(JSON.parse(result[i].json));
+			json = JSON.parse(result[i].json);
+
+			// GeoJSON Formatting Hack
+			for (var j = 0; j < json.geometry.coordinates.length; j++) {
+				if (json.geometry.type === 'LineString' && json.geometry.coordinates[j].length > 2)
+					json.geometry.coordinates[j] = json.geometry.coordinates[j].slice(0, 2);
+				for (var k = 0; k < json.geometry.coordinates[j].length; k++)
+					if (json.geometry.type === 'Polygon' && json.geometry.coordinates[j][k].length > 2)
+						json.geometry.coordinates[j][k] = json.geometry.coordinates[j][k].slice(0, 2);
+			}
+
+			map.data.addGeoJson(json);
 		}
 	}
 
 	// Module Exports
 	return {
 		initMap: initMap,
-		submitQuery: submitQuery
+		submitRegionQuery: submitRegionQuery,
+		submitPointQuery: submitPointQuery
 	};
 })();
