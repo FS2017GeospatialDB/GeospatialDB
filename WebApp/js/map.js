@@ -105,6 +105,7 @@ var map = (function() {
 					if (json.geometry.type === 'Polygon' && json.geometry.coordinates[j][k].length > 2)
 						json.geometry.coordinates[j][k] = json.geometry.coordinates[j][k].slice(0, 2);
 			}
+			json.id = json.id + Math.random().toString(36).substring(7);
 
 			map.data.addGeoJson(json);
 		}

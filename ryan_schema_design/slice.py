@@ -330,6 +330,7 @@ def get_st_for_face(face, xyz):
 	elif face == 5:
 		return x,1+z
 
+# Untested and Broken
 def get_closest_xyz(srcCell, destCell):
 	srcFace = srcCell.face()
 	destFace = destCell.face()
@@ -415,6 +416,7 @@ def get_closest_xyz(srcCell, destCell):
 		# find shortest route and return x,y,z
 	return x,y,z
 
+# Broken
 def getFaceAxes(face):
 	if face == 0:
 		return [[1,0,0], [0,1,0], [0,0,1]]
@@ -429,6 +431,7 @@ def getFaceAxes(face):
 	elif face == 5:
 		return [[1,0,0], [0,0,1], [0,-1,0]]
 
+# Broken
 def getFaceOffset(face):
 	if face == 0:
 		return [0,0,0]
@@ -443,6 +446,7 @@ def getFaceOffset(face):
 	elif face == 5:
 		return [0,0,-1]
 
+# Broken
 def rotate(axisX, axisY, axisZ, x, y, z):
 	if abs(axisX) == 1:
 		return rotateX(axisX > 0, x, y, z)
@@ -451,27 +455,32 @@ def rotate(axisX, axisY, axisZ, x, y, z):
 	elif abs(axisZ):
 		return rotateZ(axisZ > 0, x, y, z)
 
+# Broken
 def rotateX(positive, x, y, z):
 	if positive:
 		return x, -z, y
 	else:
 		return x, z, -y
 
+# Broken
 def rotateY(positive, x, y, z):
 	if positive:
 		return z, y, -x
 	else:
 		return -z, y, x
 
+# Broken
 def rotateZ(positive, x, y, z):
 	if positive:
 		return y, -x, z
 	else:
 		return -y, x, z
 
+# Broken
 def translate(tx, ty, tz, x, y, z):
 	return x+tx, y+ty, z+tz
 
+# Broken
 def distance(x1, y1, z1, x2, y2, z2):
 	return math.sqrt((x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2)
 

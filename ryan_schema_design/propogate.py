@@ -52,7 +52,7 @@ def propogate():
 
             # Perform Version Update
             for cellID,cellJson in jsons.items():
-                cellID = ctypes.c_long(cellID).value
+                cellID = (cellID + 2**63) % 2**64 - 2**63                       # Convert to 64-bit Signed Integer
                 cellJson = geojson.dumps(cellJson)
                 results = session.execute(slave_select_ps, (level, cellID, cassandra.util.HIGHEST_TIME_UUID, osm_id))
 
