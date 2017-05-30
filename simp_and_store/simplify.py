@@ -5,8 +5,10 @@ def getSquareDistance(p1, p2):
     """
     Square distance between two points
     """
-    dx = p1['x'] - p2['x']
-    dy = p1['y'] - p2['y']
+    # dx = p1['x'] - p2['x']
+    # dy = p1['y'] - p2['y']
+    dx = p1[0] - p2[0]
+    dy = p1[1] - p2[1]
 
     return dx * dx + dy * dy
 
@@ -15,24 +17,43 @@ def getSquareSegmentDistance(p, p1, p2):
     """
     Square distance between point and a segment
     """
-    x = p1['x']
-    y = p1['y']
+    # x = p1['x']
+    # y = p1['y']
 
-    dx = p2['x'] - x
-    dy = p2['y'] - y
+    # dx = p2['x'] - x
+    # dy = p2['y'] - y
+
+    # if dx != 0 or dy != 0:
+    #     t = ((p['x'] - x) * dx + (p['y'] - y) * dy) / (dx * dx + dy * dy)
+
+    #     if t > 1:
+    #         x = p2['x']
+    #         y = p2['y']
+    #     elif t > 0:
+    #         x += dx * t
+    #         y += dy * t
+
+    # dx = p['x'] - x
+    # dy = p['y'] - y
+
+    x = p1[0]
+    y = p1[1]
+
+    dx = p2[0] - x
+    dy = p2[1] - y
 
     if dx != 0 or dy != 0:
-        t = ((p['x'] - x) * dx + (p['y'] - y) * dy) / (dx * dx + dy * dy)
+        t = ((p[0] - x) * dx + (p[1] - y) * dy) / (dx * dx + dy * dy)
 
         if t > 1:
-            x = p2['x']
-            y = p2['y']
+            x = p2[0]
+            y = p2[1]
         elif t > 0:
             x += dx * t
             y += dy * t
 
-    dx = p['x'] - x
-    dy = p['y'] - y
+    dx = p[0] - x
+    dy = p[1] - y
 
     return dx * dx + dy * dy
 
@@ -58,7 +79,7 @@ def simplifyRadialDistance(points, tolerance):
 def simplifyDouglasPeucker(points, tolerance):
     length = len(points)
     markers = [0] * length
-    
+
     first = 0
     last = length - 1
 

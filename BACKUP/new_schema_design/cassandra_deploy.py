@@ -30,7 +30,7 @@ VALUES (%s,%s,%s,%s,%s)
 """
 
 # Connect to the Database
-cluster = Cluster()
+cluster = Cluster(['fredwangwang.mynetgear.com'])
 session = cluster.connect('global')
 
 # Clear Existing Data
