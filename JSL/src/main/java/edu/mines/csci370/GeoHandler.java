@@ -24,7 +24,7 @@ public class GeoHandler implements GeolocationService.Iface {
   private static final double SCALE_19 = 463.899558572;
 
   @Override
-  public List<Feature> getFeatures(double lBox, double rBox, double bBox, double tBox, long timestamp) {
+  public List<Feature> getFeatures(double lBox, double rBox, double bBox, double tBox) {
 
     // Build Rectangles
     long start = System.currentTimeMillis();
@@ -48,20 +48,16 @@ public class GeoHandler implements GeolocationService.Iface {
     List<Feature> results = new ArrayList<>();
     Session session = Database.getSession();
     PreparedStatement statement = Database.prepareFromCache(
-      "SELECT unixTimestampOf(time) AS time_unix, json FROM global.slave WHERE level=? AND s2_id=? AND time < mintimeuuid(?)");
-
-    // Historical Query info
-    System.out.println(timestamp);
-    // mintimeuuid: YYYY-MM-DD hh:mm+____
+      "SELECT unixTimestampOf(time) AS time, json FROM global.slave WHERE level=? AND s2_id=?");
 
     // Execute the Query
     for (S2CellId cell : cells) {
-      ResultSet rs = session.execute(statement.bind(level, cell.id(), "1975-01-01 00:00"));
+      ResultSet rs = session.execute(statement.bind(level, cell.id()));
 
       while (!rs.isExhausted()) {
         Row row = rs.one();
         Feature feature = new Feature(
-          row.getLong("time_unix"),
+          row.getLong("time"),
           row.getString("json"));
 
         results.add(feature);
