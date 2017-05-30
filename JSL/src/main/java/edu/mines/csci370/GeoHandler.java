@@ -73,3 +73,38 @@ public class GeoHandler implements GeolocationService.Iface {
     return results;
   }
 }
+
+  @Override
+  public List<Feature> getCell(double lat, double lng, long timestamp) {
+
+    // Find cell
+    long start = System.currentTimeMillis();
+    S2LatLng loc = S2LatLng.fromDegrees(lat, lng);
+    S2Cell cell = new S2Cell(loc);
+
+    // Lookup the Cells in the Database
+    List<Feature> results = new ArrayList<>();
+    Session session = Database.getSession();
+    PreparedStatement statement = Database.prepareFromCache(
+      "SELECT unixTimestampOf(time) AS time_unix, json FROM global.slave WHERE level=? AND s2_id=? AND time < mintimeuuid(?)");
+
+    // Historical Query info
+    System.out.println(timestamp);
+    // mintimeuuid: YYYY-MM-DD hh:mm+____
+
+    // Execute the Query
+    ResultSet rs = session.execute(statement.bind(cell.level(), cell.id(), "1975-01-01 00:00"));
+
+    while (!rs.isExhausted()) {
+      Row row = rs.one();
+      Feature feature = new Feature(
+        row.getLong("time_unix"),
+        row.getString("json"));
+     results.add(feature);
+    }
+
+    long finish = System.currentTimeMillis();
+    System.out.println(cells.size() + " queries @ scale=" + level + " in " + (finish - start) + "ms");
+    return results;
+  }
+
