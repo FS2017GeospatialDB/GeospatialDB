@@ -12,7 +12,7 @@ def load():
 	with open(sys.argv[1], 'r') as in_file:
 		data = geojson.loads(in_file.read())
 
-	cluster = Cluster(['fredwangwang.mynetgear.com'])
+	cluster = Cluster()
 	session = cluster.connect('global')
 	level = 16
 	s2threshold = 100
