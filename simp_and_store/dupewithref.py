@@ -44,7 +44,6 @@ def load():
 			latlng = s2sphere.LatLng.from_degrees(pt[1], pt[0])
 			cell = s2sphere.CellId.from_lat_lng(latlng).parent(level)
 			s2set.add(ctypes.c_long(cell.id()).value)
-		
 		if (len(s2set) < s2threshold):
 			for s2 in s2set:
 				session.execute(ins_statement, (level, s2, uuid.uuid1(), osm_id, json))
