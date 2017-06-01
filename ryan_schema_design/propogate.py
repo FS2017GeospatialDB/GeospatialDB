@@ -47,6 +47,8 @@ def propogate():
                 jsons = slice.sliceLineString(json, level)
             elif json['geometry']['type'] == 'Polygon':
                 jsons = slice.slicePolygon(json, level)
+            elif json['geometry']['type'] == 'MultiPolygon':
+                jsons = slice.sliceMultiPolygon(json, level)
             else:
                 continue
 

@@ -144,6 +144,12 @@ def sliceLineString(lineStringJson, level):
 					result[nextCell.id()] = deepcopy(lineStringJson)
 				result[nextCell.id()]['geometry']['coordinates'].append([fakePoint.to_lat_lng().lng().degrees, fakePoint.to_lat_lng().lat().degrees, 'EE' + decisionCode[1]])
 
+				# Wrap the Corner (if necessary)
+				if len(result[nextCell.id()]['geometry']['coordinates']) > 1:
+					newPoints = wrapCorner(nextCell.id(), True, result[nextCell.id()]['geometry']['coordinates'][-2][2], result[nextCell.id()]['geometry']['coordinates'][-1][2])
+					if newPoints != None:
+						result[nextCell.id()]['geometry']['coordinates'][-1:-1] = newPoints
+
 				lastCell, lastPoint = nextCell, fakePoint
 
 			else:
@@ -246,6 +252,29 @@ def slicePolygon(polygonJson, level):
 			frontier.append(right.id())
 	"""
 
+	return result
+
+# Untested
+def sliceMultiPolygon(multiPolygonJson, level):
+	polygons = multiPolygonJson['geometry']['coordinates']
+	multiPolygonJson['geometry']['coordinates'] = []
+	polygonJson = deepcopy(multiPolygonJson)
+	polygonJson['geometry']['type'] = 'Polygon'
+
+	result = {}
+	for polygon in polygons:
+		polygonJson['geometry']['coordinates'] = polygon
+		polygonLocations = slicePolygon(polygonJson, level)
+
+		for location in polygonLocations.keys():
+			if not location in result:
+				result[location] = deepcopy(multiPolygonJson)
+			result[location]['geometry']['coordinates'].append(polygonLocations[location]['geometry']['coordinates'])
+
+	for location in result:
+		if len(result[location]) == 1:
+			result[location]['geometry']['type'] = 'Polygon'
+			result[location]['geometry']['coordinates'] = result[location]['geometry']['coordinates'][0]
 	return result
 
 # Untested
