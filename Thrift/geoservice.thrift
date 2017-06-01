@@ -19,4 +19,6 @@ service GeolocationService {
 	 * Primary geolocation API call.
 	 */
 	list<Feature> getFeatures(1:double lBox, 2:double rBox, 3:double bBox, 4:double tBox, 5:i64 timestamp);
+
+	list<Feature> getCell(1:double lat, 2:double lng, 3:i64 timestamp);
 }
