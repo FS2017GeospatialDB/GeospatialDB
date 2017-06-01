@@ -70,12 +70,15 @@ var map = (function() {
 	}
 
 	function submitRegionQuery() {
-		var date = document.getElementById('calendar').value;
-		timestamp = new Date(date);
-		timestamp.setHours(document.getElementById('ts_hours').value);
-		timestamp.setMinutes(document.getElementById('ts_minutes').value);
-		timestamp.setSeconds(document.getElementById('ts_seconds').value);
-		console.log(timestamp.getTime());
+		if (document.getElementById('hqToggle').children[0].checked) {
+			var date = document.getElementById('calendar').value;
+			timestamp = new Date(date);
+			timestamp.setHours(document.getElementById('ts_hours').value);
+			timestamp.setMinutes(document.getElementById('ts_minutes').value);
+			timestamp.setSeconds(document.getElementById('ts_seconds').value);
+			time = timestamp.getTime();
+		} else { time = Date.now(); }
+		console.log(time);
 
 		var bounds = map.getBounds();
 		var east = bounds.getNorthEast().lng();
@@ -86,7 +89,7 @@ var map = (function() {
 		var transport = new Thrift.TXHRTransport("http://localhost:8000/service");
 		var protocol = new Thrift.TJSONProtocol(transport);
 		var client = new GeolocationServiceClient(protocol);
-		var result = client.getFeatures(west, east, south, north, Date.now() /*timestamp.getTime()*/);
+		var result = client.getFeatures(west, east, south, north, time);
 
 		// Clear the Map
 		map.data.forEach(function(feature) {
@@ -105,16 +108,34 @@ var map = (function() {
 					if (json.geometry.type === 'Polygon' && json.geometry.coordinates[j][k].length > 2)
 						json.geometry.coordinates[j][k] = json.geometry.coordinates[j][k].slice(0, 2);
 			}
-			json.id = json.id + Math.random().toString(36).substring(7);
+			json.id = json.id + Math.random().toString(36).substring(7);	
 
 			map.data.addGeoJson(json);
 		}
 	}
 
+	function addFeature() {
+		var featureJSON = prompt("Insert the GeoJSON information below:", "Insert GeoJSON Here");
+			try {
+				var json = JSON.parse(featureJSON);
+				map.data.addGeoJson(json);
+			} catch(e) {
+				window.alert("Invalid GeoJSON");
+			}
+			console.log(featureJSON);
+	}
+	
+	function deleteFeature() {
+
+	}
+
+
 	// Module Exports
 	return {
 		initMap: initMap,
 		submitRegionQuery: submitRegionQuery,
-		submitPointQuery: submitPointQuery
+		submitPointQuery: submitPointQuery,
+		addFeature: addFeature,
+		deleteFeature: deleteFeature
 	};
 })();
