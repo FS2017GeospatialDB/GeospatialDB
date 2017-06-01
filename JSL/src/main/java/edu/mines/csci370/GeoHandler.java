@@ -24,7 +24,6 @@ public class GeoHandler implements GeolocationService.Iface {
   @Override
   public List<Feature> getFeatures(double lBox, double rBox, double bBox, double tBox, long timestampMillis) {
 
-
     // Build Rectangles
     long start = System.currentTimeMillis();
     S2LatLng bottomLeft = S2LatLng.fromDegrees(bBox, lBox);
@@ -47,7 +46,6 @@ public class GeoHandler implements GeolocationService.Iface {
     List<Feature> results = new ArrayList<>();
     Session session = Database.getSession();
     PreparedStatement statement = Database.prepareFromCache(
-
       "SELECT unixTimestampOf(time) AS time_unix, json FROM global.slave WHERE level=? AND s2_id=? AND time >= ?");
 
     // Historical Query info
@@ -58,11 +56,10 @@ public class GeoHandler implements GeolocationService.Iface {
     for (S2CellId cell : cells) {
       ResultSet rs = session.execute(statement.bind(level, cell.id(), UUIDs.startOf(timestampMillis)));
 
-
       while (!rs.isExhausted()) {
         Row row = rs.one();
         Feature feature = new Feature(
-          row.getLong("time"),
+          row.getLong("time_unix"),
           row.getString("json"));
 
         results.add(feature);
