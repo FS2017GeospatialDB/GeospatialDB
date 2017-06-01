@@ -65,7 +65,6 @@ def bbox(ptlist, session, osm_id, json, ins_statement):
 
 	for cellid in cover_array:
 		new_cell = S2Cell(cellid)
-		#print(new_cell.level())
 		cell_value = ctypes.c_long(cellid.id()).value
 		session.execute(ins_statement, (new_cell.level(), cell_value, uuid.uuid1(), osm_id, json))
 
