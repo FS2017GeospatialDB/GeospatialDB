@@ -1,16 +1,17 @@
 '''Main class to load the geojson file to the database'''
 
 import sys
+from timeit import default_timer as timer
 import geojson
 import dbhelper
 import geohelper
-from timeit import default_timer as timer
 
 
 def print_usage(stat):
     '''Print the usage and exit'''
     print "Usage:", __file__, "spatialData.json\n"
     sys.exit(stat)
+
 
 def load_geojson(filename):
     '''Given the filename, return the geojson obj'''
@@ -25,6 +26,7 @@ def load_geojson(filename):
     print 'Loading json finished in %.5fs' % (end - start)
     return obj
 
+
 def run(filename):
     '''Execute entrance. Given the geojson filename, load the file to the database'''
     print 'Loading feature files...'
@@ -33,13 +35,14 @@ def run(filename):
     print 'Storing to database...'
     start = timer()
     for feature in features:
-        if geohelper.get_geo_type(feature) != 'Point':
-            pt_list = geohelper.get_pt_list(feature)
-            bboxes = geohelper.get_bboxes(pt_list)
-            dbhelper.insert_by_bboxes(bboxes, feature)
+        # if geohelper.get_geo_type(feature) == 'Point':
+        pt_list = geohelper.get_pt_list(feature)
+        bboxes = geohelper.get_bboxes(pt_list)
+        dbhelper.insert_by_bboxes(bboxes, feature)
     end = timer()
     print 'Done!'
     print 'Storing to db finished in %.5fs' % (end - start)
+
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:

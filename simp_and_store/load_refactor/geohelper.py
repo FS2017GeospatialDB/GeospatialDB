@@ -4,13 +4,15 @@ import math
 from s2 import *
 import kAvgArea
 import kAvgDiag
+import cfgparser
 
 # pre-define the base and max level of the s2 covering.
-# TODO: it may be clearier to put all the config info
-# into a centralized file
-BASE_LEVEL = 16
-MAX_LEVEL = 4
-NUM_COVERING_LIMIT = 3
+# Note: this parameter here are just place holder, they
+# will be overwritten by cfgparser. 
+# CHANGE THE BEHAVIOR IN 'cfgparser' instead
+BASE_LEVEL = MIN_LEVEL = NUM_COVERING_LIMIT = -1
+
+
 
 
 def is_correct_lng_range(lng_ranges, pt_list, percent=.3):
@@ -198,7 +200,7 @@ def get_coverer_bad(bbox):
         print 'Encountered a feature with level < 8'
 
 
-# TODO: restrict the min level feature can be, before going crazy
+# TODO: restrict the min & max level feature can be, before going crazy
 def get_covering(bbox):
     '''Given the boundary box, find the most reasonable region covering
     of the area'''
@@ -213,6 +215,9 @@ def get_covering(bbox):
 
     level = kAvgDiag.get_min_lv(digonal_distance)
 
+    # Restrict the max level to base level, if the generated level is larger than that
+    level = BASE_LEVEL if level > BASE_LEVEL else level
+
     covering = []
     size = NUM_COVERING_LIMIT + 1
     while size > NUM_COVERING_LIMIT:
@@ -222,19 +227,22 @@ def get_covering(bbox):
         covering = coverer.GetCovering(llrect)
         level = level - 1
         size = len(covering)
+        # restrict the min level the seeking loop can go
+        if level < MIN_LEVEL:
+            print 'A FEATURE HITS MIN_LEVEL LIMIT:', MIN_LEVEL
+            break
 
     ################DEBUG FUNCTION CALLS###########
-    #__test_point(level)        # make sure when only points, they are on lv 30
     __print_new_low_lv(level)
+    #__test_point(level)        # make sure when only points, they are on lv 30
     #__print_new_many_covering(len(covering))
-    # check all generated covering are the same level
-    __check_covering_same_level(covering)
+    __check_covering_same_level(covering) # check all generated covering are the same level
     ################END DEBUG FUNCTIONS############
     return covering
 
 
 def __test_point(level):
-    assert level == 30, "Why point is not 30???"
+    assert level == 30, ("Why point is ", level)
 
 
 def __print_new_low_lv(level):
@@ -280,7 +288,17 @@ def __check_covering_same_level(coverings):
         else:
             assert cur_lv == level, 'Level not the same???'
 
+def __load_config():
+    cfg = cfgparser.load_module('geohelper')
+    global BASE_LEVEL
+    global MIN_LEVEL
+    global NUM_COVERING_LIMIT
+    BASE_LEVEL = cfg['base level']
+    MIN_LEVEL = cfg['top level']
+    NUM_COVERING_LIMIT = cfg['num covering limit']
 
 ############# INITIALIZE ############
 __print_new_low_lv.min_lv = 30
 __print_new_many_covering.max_covering = 1
+__load_config()
+
