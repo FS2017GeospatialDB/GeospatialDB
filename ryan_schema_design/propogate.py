@@ -22,6 +22,9 @@ def propogate():
         SELECT json FROM slave
         WHERE level=? AND s2_id=? AND time=? AND osm_id=?
     ''')
+    slave_insert_null_ps = session.prepare('''
+        INSERT INTO slave(level, s2_id, time, osm_id)
+    ''')
     slave_insert_ps = session.prepare('''
         INSERT INTO slave(level, s2_id, time, osm_id, json)
         VALUES (?, ?, ?, ?, ?)
@@ -63,6 +66,7 @@ def propogate():
 
                 elif not results:
                     print osm_id, " is new - Updating..."
+                    session.execute(slave_insert_ps, (level, cellID, cassandra.util.uuid_from_time(int(time.time()), 0, 0), osm_id))
                     session.execute(slave_insert_ps, (level, cellID, cassandra.util.HIGHEST_TIME_UUID, osm_id, cellJson))
                 
                 elif results[0].json != cellJson:
