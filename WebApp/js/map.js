@@ -1,32 +1,42 @@
 var map = (function() {
 
 	// Private Variables
-	var infoWindow = null;
+	var infoWindow_old = null;
+	var infoWindow = document.getElementById('info_window');	
 	var map = null;
+	var geojson = null;
 
 	function initMap() {
 		// Create the Map
-		infoWindow = new google.maps.InfoWindow({})
-		map = new google.maps.Map(document.getElementById('map'), {
+		infoWindow_old = new google.maps.InfoWindow({})
+
+		map = L.map('map', {
+			center: [39.7488835, -105.2167468],
 			zoom: 15,
-			center: {lat: 39.7488835, lng: -105.2167468}	/* Fix This! */
 		});
+		L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+	    	attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+	    	maxZoom: 22,
+    		id: 'mapbox.streets',
+		    accessToken: 'pk.eyJ1IjoidHdhbGtlcjE0NjQiLCJhIjoiY2ozZzN0bHA2MDF4ZDJxb2lpdTc0OXBodSJ9.cRI1-1g_vdffzX2jG3aY8A'
+		}).addTo(map);
 
-		// Listen for Feature Clicks
-		map.data.addListener('click', function(event) {
-			infoWindow.setPosition(event.latLng);
-			infoWindow.open(map);
+		function featureInfoWindow(e) {
+			infoWindow.style.display = "";
+		//document.getElementById('osm_id').value = event.feature.getId();
+		//document.getElementById('json').value = JSON.stringify(obj));
+		}
 
-			event.feature.toGeoJson(function(obj) {
-				infoWindow.setContent('<b>Id:</b> ' + event.feature.getId() + '<br><br><b>Json:</b> ' + JSON.stringify(obj));
-			});
+		geojson = L.geoJson([], {
+			style: 	{	"color": "#ff7800",
+   						"weight": 5,
+						"opacity": 0.65
+					},
+			onEachFeature: function popupWindow(feature, layer) {
+				layer.on('click', featureInfoWindow);
+			}
 		});
-
-		// Style the Map
-		map.data.setStyle({
-			icon: 'img/point_icon.png',
-			fillColor: 'green'
-		});
+		geojson.addTo(map);
 	}
 
 	function submitPointQuery() {
@@ -38,8 +48,8 @@ var map = (function() {
 		console.log(timestamp.getTime());
 
 		var center = map.getCenter();
-		var lat = center.lat();
-		var lng = center.lng();
+		var lat = center.lat;
+		var lng = center.lng;
 
 		var transport = new Thrift.TXHRTransport("http://localhost:8000/service");
 		var protocol = new Thrift.TJSONProtocol(transport);
@@ -47,10 +57,8 @@ var map = (function() {
 		var result = client.getCell(lat, lng, Date.now() /*timestamp.getTime()*/);
 
 		// Clear the Map
-		map.data.forEach(function(feature) {
-			map.data.remove(feature);
-		});
-
+		geojson.clearLayers();
+		
 		// Add new GeoJSON's to Map
 		for (var i = 0; i < result.length; i++) {
 			json = JSON.parse(result[i].json);
@@ -65,7 +73,7 @@ var map = (function() {
 			}
 
 			console.log(JSON.stringify(json));
-			map.data.addGeoJson(json);
+			geojson.addData(json);
 		}
 	}
 
@@ -81,10 +89,10 @@ var map = (function() {
 		console.log(time);
 
 		var bounds = map.getBounds();
-		var east = bounds.getNorthEast().lng();
-		var west = bounds.getSouthWest().lng();
-		var north = bounds.getNorthEast().lat();
-		var south = bounds.getSouthWest().lat();
+		var east = bounds.getEast();
+		var west = bounds.getWest();
+		var north = bounds.getNorth();
+		var south = bounds.getSouth();
 
 		var transport = new Thrift.TXHRTransport("http://localhost:8000/service");
 		var protocol = new Thrift.TJSONProtocol(transport);
@@ -92,9 +100,7 @@ var map = (function() {
 		var result = client.getFeatures(west, east, south, north, time);
 
 		// Clear the Map
-		map.data.forEach(function(feature) {
-			map.data.remove(feature);
-		});
+		geojson.clearLayers();
 
 		// Add new GeoJSON's to Map
 		for (var i = 0; i < result.length; i++) {
@@ -108,9 +114,8 @@ var map = (function() {
 					if (json.geometry.type === 'Polygon' && json.geometry.coordinates[j][k].length > 2)
 						json.geometry.coordinates[j][k] = json.geometry.coordinates[j][k].slice(0, 2);
 			}
-			json.id = json.id + Math.random().toString(36).substring(7);	
-
-			map.data.addGeoJson(json);
+			json.id = json.id + "_" + Math.random().toString(36).substring(7);	
+			geojson.addData(json);
 		}
 	}
 
@@ -118,7 +123,14 @@ var map = (function() {
 		var featureJSON = prompt("Insert the GeoJSON information below:", "Insert GeoJSON Here");
 			try {
 				var json = JSON.parse(featureJSON);
-				map.data.addGeoJson(json);
+				L.geoJSON(json, {
+					style: 	{	"color": "#ff7800",
+   								"weight": 5,
+								"opacity": 0.65
+			   				}
+				}).bindPopup(function (layer) {
+				    return layer.feature.properties.description;
+				}).addTo(map);
 			} catch(e) {
 				window.alert("Invalid GeoJSON");
 			}

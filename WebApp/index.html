@@ -15,6 +15,13 @@
     <!-- Application CSS -->
     <link href="css/main.css" rel="stylesheet">
 
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css"
+      integrity="sha512-07I2e+7D8p6he1SIM+1twR5TIrhUQn9+I6yjqD53JQjFiMf8EtC93ty0/5vJTZGF8aAocvHYNEDJajGdNx1IsQ=="
+      crossorigin=""/>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v0.36.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v0.36.0/mapbox-gl.css' rel='stylesheet' />
+
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -96,13 +103,40 @@
 		<br>
                 <div class="row">
                   <div class="col-12 col-lg-6">
-                    <button type="button" class="btn btn-block" style="white-spce: normal;word-wrap: break-word" onclick="map.deleteFeature()" id="delete">Delete Feature</button>
+                    <button type="button" class="btn btn-block" style="white-spce: normal;word-wrap: break-word" onclick="map.deleteFeature()" id="???">??? Feature</button>
                   </div>
                   <div class="col-12 col-lg-6">
                     <button type="button" class="btn btn-primary btn-block" onclick="map.addFeature()" id="add">Add Feature</button>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6"></div>
+        <div class="col-sm-4 col-sm-offset-2">
+          <div class="panel" id="info_window" style="display:none">
+            <div class="panel-body">
+              <div class="container-fluid">
+                 <label for="osm_id">
+                   <span class="label">OSM ID:</span>
+                   <input type="text" id="osm_id" placeholder="insert id" disabled>
+                 </label>
+                 <label for="json">
+                   <span class="label">JSON:</span>
+                   <input type="text" id="json" placeholder="insert json" disabled>
+                 </label>
+              </div>
+              <div class="row">
+                <div class="col-12 col-lg-4">
+                  <button type="button" class="btn btn-block" style="white-spce: normal;word-wrap: break-word" id="cancel" onclick="cancel('info_window')">Cancel</button>
+                </div>
+                <div class="col-12 col-lg-4">
+                  <button type="button" class="btn btn-block" style="white-spce: normal;word-wrap: break-word" onclick="map.deleteFeature()" id="delete">Delete</button>
+                </div>
+                <div class="col-12 col-lg-4">
+                  <button type="button" class="btn btn-primary btn-block" onclick="map.addFeature()" id="edit">Submit</button>
+                </div>
             </div>
           </div>
         </div>
@@ -118,6 +152,11 @@
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     
+    <!--- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"
+      integrity="sha512-A7vV8IFfih/D732iSSKi20u/ooOfj/AGehOKq0f4vLT1Zr2Y+RX7C+w8A1gaSasGtRUZpF/NZgzSAu4/Gc41Lg=="
+      crossorigin=""></script>
+
     <!-- jQuery calendar -->
     <script src="js/jquery-1.12.4.js"></script>
     <script src="js/jquery-ui.js"></script>
