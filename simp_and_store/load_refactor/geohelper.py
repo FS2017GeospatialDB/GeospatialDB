@@ -13,8 +13,6 @@ import cfgparser
 BASE_LEVEL = MIN_LEVEL = NUM_COVERING_LIMIT = -1
 
 
-
-
 def is_correct_lng_range(lng_ranges, pt_list, percent=.3):
     '''Check if the coordinates fall in the lng_range. Percent to check can be defined as
     the last argument

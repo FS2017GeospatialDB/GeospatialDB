@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 '''Main class to load the geojson file to the database'''
 
 import sys
