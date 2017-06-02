@@ -6,7 +6,7 @@ import atexit
 import geojson
 import geohelper
 from cassandra.cluster import Cluster
-import cassandra
+from cassandra.util import HIGHEST_TIME_UUID
 import cfgparser
 
 
@@ -23,13 +23,18 @@ PS_INSERT = '''INSERT INTO slave (level, s2_id, time, osm_id, json) VALUES (?, ?
 PREPARED_INSERT = SESSION.prepare(PS_INSERT)
 
 
+def to_64bit(number):
+    '''wrap-up for c type long'''
+    return ctypes.c_long(number).value
+
+
 def insert_by_covering(cellid, feature):
     '''Given the covering region, store the given feature into the database'''
     osm_id = feature['id']
-    s2_id = ctypes.c_long(cellid.id()).value
+    s2_id = to_64bit(cellid.id())
     feature_str = geojson.dumps(feature)
     insert_by_covering.handle = SESSION.execute_async(
-        PREPARED_INSERT, (cellid.level(), s2_id, cassandra.util.HIGHEST_TIME_UUID, osm_id, feature_str))
+        PREPARED_INSERT, (cellid.level(), s2_id, HIGHEST_TIME_UUID, osm_id, feature_str))
 
 
 def insert_by_bboxes(bboxes, feature):
@@ -38,8 +43,7 @@ def insert_by_bboxes(bboxes, feature):
     for bbox in bboxes:
         coverings = geohelper.get_covering(bbox)
         for covering in coverings:
-            a = 0
-            # insert_by_covering(covering, feature)
+            insert_by_covering(covering, feature)
 
 
 def __initialize():
