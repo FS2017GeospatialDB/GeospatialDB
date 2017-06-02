@@ -88,4 +88,3 @@ function toggle(checkboxId, formId) {
 	}
 	validate();
 }
-
