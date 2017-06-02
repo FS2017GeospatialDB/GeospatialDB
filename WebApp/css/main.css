@@ -25,3 +25,19 @@
   display: flex;
   align-items: center;
 }
+
+.form-group label{
+  float: left;
+  display: inline-block;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  width: 40%;
+  height: 34px;
+}
+
+.form-group input{
+  display: inline-block;
+  width: 60%
+}

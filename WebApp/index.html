@@ -117,19 +117,10 @@
         <div class="col-sm-4 col-sm-offset-2">
           <div class="panel" id="info_window" style="display:none">
             <div class="panel-body">
-              <div class="container-fluid">
-                 <label for="osm_id">
-                   <span class="label">OSM ID:</span>
-                   <input type="text" id="osm_id" placeholder="insert id" disabled>
-                 </label>
-                 <label for="json">
-                   <span class="label">JSON:</span>
-                   <input type="text" id="json" placeholder="insert json" disabled>
-                 </label>
-              </div>
+              <div class="container-fluid" id="iw_form_parent"></div>
               <div class="row">
                 <div class="col-12 col-lg-4">
-                  <button type="button" class="btn btn-block" style="white-spce: normal;word-wrap: break-word" id="cancel" onclick="cancel('info_window')">Cancel</button>
+                  <button type="button" class="btn btn-block" style="white-spce: normal;word-wrap: break-word" id="cancel" onclick="cancel('info_window', 'iw_form_parent')">Cancel</button>
                 </div>
                 <div class="col-12 col-lg-4">
                   <button type="button" class="btn btn-block" style="white-spce: normal;word-wrap: break-word" onclick="map.deleteFeature()" id="delete">Delete</button>

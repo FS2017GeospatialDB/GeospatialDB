@@ -89,6 +89,6 @@ function toggle(checkboxId, formId) {
 	validate();
 }
 
-function cancel(panel_id) {
+function cancel(panel_id, form_parent) {
 	document.getElementById(panel_id).style.display = "none";
 }

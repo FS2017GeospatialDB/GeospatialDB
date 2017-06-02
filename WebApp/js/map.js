@@ -22,7 +22,8 @@ var map = (function() {
 		}).addTo(map);
 
 		function featureInfoWindow(e) {
-			infoWindow.style.display = "";
+			console.log("click!");
+		//infoWindow.style.display = "";
 		//document.getElementById('osm_id').value = event.feature.getId();
 		//document.getElementById('json').value = JSON.stringify(obj));
 		}
@@ -33,7 +34,24 @@ var map = (function() {
 						"opacity": 0.65
 					},
 			onEachFeature: function popupWindow(feature, layer) {
-				layer.on('click', featureInfoWindow);
+				layer.on('click', function (e) {
+					infoWindow.style.display = "";
+					console.log(feature.properties);
+					var form = document.getElementById('iw_form_parent');
+					form.innerHTML = "<div class='form-group'><label for='osm_id' class='label-primary'>OSM ID:</label><input class='form-control' type='text' id='osm_id' value="
+						+ feature.properties[key] + " disabled></div>";
+
+
+					for (var key in feature.properties) {
+						if (feature.properties.hasOwnProperty(key)) {
+							if (key == "id") continue;
+							
+							form.innerHTML+="<div class='form-group'><label for='" + key +"' class='label-info'>" + key 
+								+ ":</label><input type='text' class='form-control' id='" + key + "' value='" + feature.properties[key] + "'></div>";
+							console.log(key + " -> " + feature.properties[key]);
+						}
+					}
+				});
 			}
 		});
 		geojson.addTo(map);
