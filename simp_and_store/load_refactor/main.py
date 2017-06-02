@@ -1,4 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
+
+
+
+
 
 '''Main class to load the geojson file to the database'''
 

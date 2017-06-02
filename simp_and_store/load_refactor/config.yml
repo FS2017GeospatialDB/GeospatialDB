@@ -5,7 +5,7 @@ geohelper:
   # the maximum level to store is the base level, the minimum level to store is the 
   # top level. If a feature is too large to store into a single top level tile, it will
   # be stored in all overlapping top level tiles
-  base level: 13
+  base level: 16
   top level: 4
 
   # Num covering limit defines the maximum number of tiles allowed for a feature to store
