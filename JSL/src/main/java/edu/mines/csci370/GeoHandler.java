@@ -2,6 +2,8 @@ package edu.mines.csci370;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
@@ -15,6 +17,10 @@ import com.google.common.geometry.S2CellId;
 import com.google.common.geometry.S2LatLng;
 import com.google.common.geometry.S2LatLngRect;
 import com.google.common.geometry.S2RegionCoverer;
+
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import edu.mines.csci370.api.Feature;
 import edu.mines.csci370.api.GeolocationService;
@@ -44,9 +50,13 @@ public class GeoHandler implements GeolocationService.Iface {
 
     // Lookup the Cells in the Database
     List<Feature> results = new ArrayList<>();
+    Map<String, Map<Long, JSONObject>> pieces = new HashMap<>();
+    Map<String, Map<Long, Long>> changeDate = new HashMap<>();
+    Map<String, Long> timestamps = new HashMap<>();
+
     Session session = Database.getSession();
     PreparedStatement statement = Database.prepareFromCache(
-      "SELECT unixTimestampOf(time) AS time_unix, json FROM global.slave WHERE level=? AND s2_id=? AND time >= ?");
+      "SELECT unixTimestampOf(time) AS time_unix, json, osm_id FROM global.slave WHERE level=? AND s2_id=? AND time >= ?");
 
     // Historical Query info
     // System.out.println(timestampMillis);
@@ -58,13 +68,40 @@ public class GeoHandler implements GeolocationService.Iface {
 
       while (!rs.isExhausted()) {
         Row row = rs.one();
-        Feature feature = new Feature(
-          row.getLong("time_unix"),
-          row.getString("json"));
+        String json = row.getString("json");
+        String osmId = row.getString("osm_id");
+        Long timestamp = row.getLong("time_unix");
 
-        results.add(feature);
+        try {
+          if (!pieces.containsKey(osmId))
+            pieces.put(osmId, new HashMap<Long, JSONObject>());
+          if (!changeDate.containsKey(osmId))
+            changeDate.put(osmId, new HashMap<Long, Long>());
+
+          if (!changeDate.get(osmId).containsKey(cell.id())
+            || changeDate.get(osmId).get(cell.id()) > timestamp) {
+            pieces.get(osmId).put(cell.id(), (JSONObject) (new JSONParser()).parse(json));
+            timestamps.put(osmId, timestamp);
+
+            results.add(new Feature(timestamp, json));
+          }
+          
+        } catch (ParseException e) {
+          throw new RuntimeException("JSON Parsing Exception Caught: " + e.getMessage());
+        }
       }
     }
+
+    // Recombine Features
+    /*for (String osmId : pieces.keySet()) {
+      Map<Long, JSONObject> list = pieces.get(osmId);
+
+      JSONObject unified = reconstruct(list);
+      results.add(new Feature(
+        timestamps.get(osmId),
+        unified.toString()
+      ));
+    }*/
 
     long finish = System.currentTimeMillis();
     System.out.println(cells.size() + " queries @ scale=" + level + " in " + (finish - start) + "ms");
@@ -104,5 +141,9 @@ public class GeoHandler implements GeolocationService.Iface {
     long finish = System.currentTimeMillis();
     System.out.println("1 query @ scale=" + cell.level() + " in " + (finish - start) + "ms");
     return results;
+  }
+
+  private JSONObject reconstruct(Map<Long, JSONObject> map) {
+    return null;
   }
 }

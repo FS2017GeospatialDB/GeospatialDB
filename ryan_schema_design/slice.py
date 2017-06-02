@@ -40,7 +40,7 @@ def sliceMultiPoint(multiPointJson, level):
 
 	return result
 
-def sliceLineString(lineStringJson, level):
+def sliceLineString(lineStringJson, level, clockwise = True):
 	line = lineStringJson['geometry']['coordinates']
 	lineStringJson['geometry']['coordinates'] = []
 	pointJson = deepcopy(lineStringJson)
@@ -144,6 +144,12 @@ def sliceLineString(lineStringJson, level):
 					result[nextCell.id()] = deepcopy(lineStringJson)
 				result[nextCell.id()]['geometry']['coordinates'].append([fakePoint.to_lat_lng().lng().degrees, fakePoint.to_lat_lng().lat().degrees, 'EE' + decisionCode[1]])
 
+				# Wrap the Corner (if necessary)
+				if len(result[nextCell.id()]['geometry']['coordinates']) > 1:
+					newPoints = wrapCorner(nextCell.id(), clockwise, result[nextCell.id()]['geometry']['coordinates'][-2][2], result[nextCell.id()]['geometry']['coordinates'][-1][2])
+					if newPoints != None:
+						result[nextCell.id()]['geometry']['coordinates'][-1:-1] = newPoints
+
 				lastCell, lastPoint = nextCell, fakePoint
 
 			else:
@@ -190,7 +196,7 @@ def slicePolygon(polygonJson, level):
 	for line in lines:
 		clockwise = isClockwise(line)
 		lineStringJson['geometry']['coordinates'] = line
-		lineLocations = sliceLineString(lineStringJson, level)
+		lineLocations = sliceLineString(lineStringJson, level, clockwise)
 
 		for location in lineLocations.keys():
 			if not location in result.keys():
@@ -198,11 +204,13 @@ def slicePolygon(polygonJson, level):
 			result[location]['geometry']['coordinates'][0].extend(lineLocations[location]['geometry']['coordinates'])
 
 	for location in result:
+		"""
 		for pointNum,point in enumerate(result[location]['geometry']['coordinates'][0]):
 			if len(point) == 3:
 
 				# Entering Polygon, Round the Corner
 				if point[2][1] == 'E' and pointNum != 0:
+					print result[location]['geometry']['coordinates'][0][pointNum-1][2], result[location]['geometry']['coordinates'][0][pointNum][2]
 					newPoints = wrapCorner(location, clockwise, result[location]['geometry']['coordinates'][0][pointNum-1][2], result[location]['geometry']['coordinates'][0][pointNum][2])
 					if newPoints != None:
 						result[location]['geometry']['coordinates'][0][pointNum:pointNum] = newPoints
@@ -210,14 +218,14 @@ def slicePolygon(polygonJson, level):
 				# Leaving the Polygon, Nothing to See Here
 				elif point[2][1] == 'L':
 					pass
+		"""
 
 		# Check if result[location] is not closed
 		if result[location]['geometry']['coordinates'][0][0] != result[location]['geometry']['coordinates'][0][-1]:
 			newPoints = wrapCorner(location, clockwise, result[location]['geometry']['coordinates'][0][-1][2], result[location]['geometry']['coordinates'][0][0][2])
 			if newPoints != None:
 				result[location]['geometry']['coordinates'][0].extend(newPoints)
-			result[location]['geometry']['coordinates'][0].append(result[location]['geometry']['coordinates'][0][0])
-		
+			result[location]['geometry']['coordinates'][0].append(result[location]['geometry']['coordinates'][0][0])		
 
 	# Search for enclosed cells not listed here that need to be added
 	"""
@@ -245,7 +253,30 @@ def slicePolygon(polygonJson, level):
 		if right.id() not in frontier and right.id() not in searched and right.id() not in edgeCells:
 			frontier.append(right.id())
 	"""
+	
+	return result
 
+# Untested
+def sliceMultiPolygon(multiPolygonJson, level):
+	polygons = multiPolygonJson['geometry']['coordinates']
+	multiPolygonJson['geometry']['coordinates'] = []
+	polygonJson = deepcopy(multiPolygonJson)
+	polygonJson['geometry']['type'] = 'Polygon'
+
+	result = {}
+	for polygon in polygons:
+		polygonJson['geometry']['coordinates'] = polygon
+		polygonLocations = slicePolygon(polygonJson, level)
+
+		for location in polygonLocations.keys():
+			if not location in result:
+				result[location] = deepcopy(multiPolygonJson)
+			result[location]['geometry']['coordinates'].append(polygonLocations[location]['geometry']['coordinates'])
+
+	for location in result:
+		if len(result[location]) == 1:
+			result[location]['geometry']['type'] = 'Polygon'
+			result[location]['geometry']['coordinates'] = result[location]['geometry']['coordinates'][0]
 	return result
 
 # Untested
