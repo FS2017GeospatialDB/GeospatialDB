@@ -1,2 +1,5 @@
-# python compile file
 *.pyc
+*.osm
+*.json
+*.geojson
+

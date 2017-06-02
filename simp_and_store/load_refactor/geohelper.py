@@ -1,6 +1,16 @@
 '''Geo helper class'''
 
 import math
+from s2 import *
+import kAvgArea
+import kAvgDiag
+
+# pre-define the base and max level of the s2 covering.
+# TODO: it may be clearier to put all the config info
+# into a centralized file
+BASE_LEVEL = 16
+MAX_LEVEL = 4
+NUM_COVERING_LIMIT = 3
 
 
 def is_correct_lng_range(lng_ranges, pt_list, percent=.3):
@@ -31,7 +41,7 @@ def find_xtrem_coord(pt_list):
     min_lat = min_lng = 181
     max_lat = max_lng = -181
     for pt in pt_list:
-            # geojson store lng first, then lat...
+        # geojson store lng first, then lat...
         lat = pt[1]
         lng = pt[0]
         if lat > max_lat:
@@ -43,6 +53,11 @@ def find_xtrem_coord(pt_list):
         if lng < min_lng:
             min_lng = lng
     return min_lat, max_lat, min_lng, max_lng
+
+
+def get_geo_type(feature):
+    '''Return the feature\'s geo type'''
+    return feature['geometry']['type']
 
 
 def get_bboxes(pt_list, return_lat_first=True):
@@ -139,3 +154,133 @@ def get_pt_list(feature):
         return case_polygon_mullinestr()
     if feature_type == "MultiPolygon":
         return case_mulpolygon()
+    assert False, "No such type"
+
+
+def get_coverer_bad(bbox):
+    '''BAD FUNCTION!!! Given the boundary box, find the most reasonable region coverer
+    of the area'''
+    top_left = bbox[0]
+    bottom_right = bbox[1]
+    ll_top_left = S2LatLng.FromDegrees(top_left[0], top_left[1])
+    ll_bottom_right = S2LatLng.FromDegrees(bottom_right[0], bottom_right[1])
+    digonal_distance = ll_top_left.GetDistance(ll_bottom_right).abs()
+
+    # According to the official documentation of S2, S2LatLngRect(&p, &p)
+    # specifies the first point as the lower-left coner. As we didn't follow
+    # the specification strictly in our earlier function, the only solution is
+    # to use another constructor to initialize the llrect
+    llrect = S2LatLngRect.FromPointPair(ll_top_left, ll_bottom_right)
+    level = kAvgArea.get_min_lv(llrect.Area())
+    parent = level - 1 if level != 0 else 0
+    center = llrect.GetCenter()
+
+    # Giving up on coverer. The covering algorith is a top-down algorithm, which oftentimes
+    # returns undesired result if the given max cell is too low. The tables shows the result
+    # At each level. For the detailed information, see the comment in the official source code:
+    # https://github.com/micolous/s2-geometry-library/blob/master/geometry/s2/s2regioncoverer.h
+    # max_cells:        3      4     5     6     8    12    20   100   1000
+    # median ratio:  5.33   3.32  2.73  2.34  1.98  1.66  1.42  1.11   1.01
+    # worst case:  215518  14.41  9.72  5.26  3.91  2.75  1.92  1.20   1.02
+
+    coverer = S2RegionCoverer()
+    coverer.set_max_cells(4)
+    coverer.set_max_level(level)
+    coverer.set_min_level(parent)
+    covering = coverer.GetCovering(llrect)
+    if len(covering) > 50:
+        print 'level =', level, '\tparent =', parent
+        print '#covering =', len(covering)
+
+    try:
+        assert level > 8
+    except AssertionError:
+        print 'Encountered a feature with level < 8'
+
+
+# TODO: restrict the min level feature can be, before going crazy
+def get_covering(bbox):
+    '''Given the boundary box, find the most reasonable region covering
+    of the area'''
+    top_left = bbox[0]
+    bottom_right = bbox[1]
+
+    ll_top_left = S2LatLng.FromDegrees(top_left[0], top_left[1])
+    ll_bottom_right = S2LatLng.FromDegrees(bottom_right[0], bottom_right[1])
+
+    llrect = S2LatLngRect.FromPointPair(ll_top_left, ll_bottom_right)
+    digonal_distance = ll_top_left.GetDistance(ll_bottom_right).abs().radians()
+
+    level = kAvgDiag.get_min_lv(digonal_distance)
+
+    covering = []
+    size = NUM_COVERING_LIMIT + 1
+    while size > NUM_COVERING_LIMIT:
+        coverer = S2RegionCoverer()
+        coverer.set_max_level(level)
+        coverer.set_min_level(level)
+        covering = coverer.GetCovering(llrect)
+        level = level - 1
+        size = len(covering)
+
+    ################DEBUG FUNCTION CALLS###########
+    #__test_point(level)        # make sure when only points, they are on lv 30
+    __print_new_low_lv(level)
+    #__print_new_many_covering(len(covering))
+    # check all generated covering are the same level
+    __check_covering_same_level(covering)
+    ################END DEBUG FUNCTIONS############
+    return covering
+
+
+def __test_point(level):
+    assert level == 30, "Why point is not 30???"
+
+
+def __print_new_low_lv(level):
+    if level < __print_new_low_lv.min_lv:
+        __print_new_low_lv.min_lv = level
+        print 'new min level:', level
+
+
+def __print_new_many_covering(length):
+    if length > __print_new_many_covering.max_covering:
+        __print_new_many_covering.max_covering = length
+        print 'new max covering:', length
+
+
+def __find_covering(llrect, init_lv, num_covering_limit=3):
+    covering = []
+    size = num_covering_limit + 1
+    lv = init_lv
+
+    while size > num_covering_limit:
+        coverer = S2RegionCoverer()
+        coverer.set_max_level(lv)
+        coverer.set_min_level(lv)
+        covering = coverer.GetCovering(llrect)
+        size = len(covering)
+        lv = lv - 1
+        # cellids = []
+        # for c in covering:
+        #     cellids.append(c.id())
+        # reduced_level = level - coverer_lv
+        # if (level - coverer_lv) >= 2:
+        #     print 'reduced', reduced_level
+    __print_new_low_lv(lv)
+    return covering
+
+
+def __check_covering_same_level(coverings):
+    level = -1
+    for cellid in coverings:
+        cur_lv = cellid.level()
+        if level == -1:
+            level = cur_lv
+        else:
+            assert cur_lv == level, 'Level not the same???'
+
+
+############# INITIALIZE ############
+__print_new_low_lv.min_lv = 30
+__print_new_many_covering.max_covering = 1
