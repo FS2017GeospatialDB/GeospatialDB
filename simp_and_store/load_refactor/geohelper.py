@@ -1,6 +1,7 @@
 '''Geo helper class'''
 
 import math
+import geojson
 from s2 import *
 import kAvgArea
 import kAvgDiag
@@ -122,39 +123,9 @@ def get_pt_list(feature):
     '''Get the point list of the single feature. Regardless of it is "multi-" feature or not,
     return the data in the same format:
 
-    list[list(lng, lat)], the order is specified by GeoJson'''
-
-    feature_type = feature['geometry']['type']
-    feature_coord = feature['geometry']['coordinates']
-
-    def case_point():
-        return [feature_coord]
-
-    def case_linestr_mulpt():
-        return feature_coord
-
-    def case_polygon_mullinestr():
-        result = []
-        for coords in feature_coord:
-            result.extend(coords)
-        return result
-
-    def case_mulpolygon():
-        result = []
-        for polygon in feature_coord:
-            for coords in polygon:
-                result.extend(coords)
-        return result
-
-    if feature_type == "Point":
-        return case_point()
-    if feature_type == "LineString" or feature_type == "MultiPoint":
-        return case_linestr_mulpt()
-    if feature_type == "Polygon" or feature_type == "MultiLineString":
-        return case_polygon_mullinestr()
-    if feature_type == "MultiPolygon":
-        return case_mulpolygon()
-    assert False, "No such type"
+    list[(lng, lat)], the order is specified by GeoJson. Found an utility in geojson library,
+    this function becomes an alias of that function'''
+    return geojson.utils.coords(feature)
 
 
 def get_coverer_bad(bbox):
@@ -164,7 +135,7 @@ def get_coverer_bad(bbox):
     bottom_right = bbox[1]
     ll_top_left = S2LatLng.FromDegrees(top_left[0], top_left[1])
     ll_bottom_right = S2LatLng.FromDegrees(bottom_right[0], bottom_right[1])
-    #digonal_distance = ll_top_left.GetDistance(ll_bottom_right).abs()
+    # digonal_distance = ll_top_left.GetDistance(ll_bottom_right).abs()
 
     # According to the official documentation of S2, S2LatLngRect(&p, &p)
     # specifies the first point as the lower-left coner. As we didn't follow
@@ -173,7 +144,7 @@ def get_coverer_bad(bbox):
     llrect = S2LatLngRect.FromPointPair(ll_top_left, ll_bottom_right)
     level = kAvgArea.get_min_lv(llrect.Area())
     parent = level - 1 if level != 0 else 0
-    #center = llrect.GetCenter()
+    # center = llrect.GetCenter()
 
     # Giving up on coverer. The covering algorith is a top-down algorithm, which oftentimes
     # returns undesired result if the given max cell is too low. The tables shows the result
@@ -246,7 +217,7 @@ def get_covering_level(bbox):
     Then the program simply runs get_level'''
     hash_value = hash(bbox)
     if not get_covering_level.dictionary.has_key(hash_value):
-        print "get_covering_level: Encountered an uncached feature"
+        # print "get_covering_level: Encountered an uncached feature"
         get_covering_level.dictionary[hash(bbox)] = get_level(bbox)
     return get_covering_level.dictionary[hash(bbox)]
 

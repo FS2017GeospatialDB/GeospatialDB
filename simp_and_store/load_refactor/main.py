@@ -57,11 +57,21 @@ def load_by_cutting(feature):
         pt_list = geohelper.get_pt_list(feature)
         bboxes = geohelper.get_bboxes(pt_list)
         n = geohelper.get_covering_level_from_bboxes(bboxes)
-        # n+1 to base level
-        for cutting_lv in range(n + 1, load_by_cutting.base_level):
-            print cutting_lv
-            cut_feature = slicing.slice_feature(feature, cutting_lv)
+        # n+1 to base level. The situation may be n+1 is even larger than
+        # base level, for specific base level required (e.g. lv13)
+        # so an if statement here guarentee the loading of the feature to
+        # at least 1 tile
+        print 'start lv=', n + 1
+        print geohelper.get_type(feature)
+        if n + 1 > load_by_cutting.base_level:
+            cut_feature = slicing.slice_feature(feature, n + 1)
             dbhelper.insert_by_cut_feature(cut_feature)
+        else:
+            # end + 1 because we want base level inclusive
+            for cutting_lv in range(n + 1, load_by_cutting.base_level + 1):
+                print 'current lv=', cutting_lv
+                cut_feature = slicing.slice_feature(feature, cutting_lv)
+                dbhelper.insert_by_cut_feature(cut_feature)
 
 
 def run(filename):

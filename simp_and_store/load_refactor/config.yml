@@ -20,5 +20,5 @@ dbhelper:
   truncate table when start: true
 
 main:
-  duplication method: true
-  cutting method: false
+  duplication method: false
+  cutting method: true
