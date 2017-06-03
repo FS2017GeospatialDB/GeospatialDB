@@ -1,1 +1,4 @@
 http://api.openstreetmap.fr/xapi?*%5Bbbox=-105.2930,39.2333,-104.4992,40.1106%5D
+
+
+golden: http://api.openstreetmap.fr/xapi?*%5Bbbox=-105.242337,39.69888,-105.160867,39.723622%5D

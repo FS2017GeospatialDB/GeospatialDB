@@ -2,6 +2,7 @@ import math
 import numpy
 import geojson
 import s2sphere
+import geohelper
 
 from copy import deepcopy
 
@@ -9,6 +10,27 @@ toLeft = {0:4, 1:0, 2:4, 3:1, 4:3, 5:4}
 toRight = {0:1, 1:3, 2:1, 3:4, 4:0, 5:1}
 toTop = {0:2, 1:2, 2:3, 3:2, 4:2, 5:0}
 toBottom = {0:5, 1:5, 2:0, 3:5, 4:5, 5:3}
+
+def slice_feature(json, level):
+    '''Given the raw_feature and the desired level, cutting the feature.
+    Note: This function is not fully implemented
+    The result will be {CellId (long): json}, where cellid is the region
+    that feature belongs to, json is the cutted geojson feature'''
+    feature_set = dict()
+    geo_type = geohelper.get_type(json)
+    # no need to slice points, as duplicate method already stores original data
+    try:
+        if geo_type == 'MultiPoint':
+            feature_set = sliceMultiPoint(json, level)
+        elif geo_type == 'LineString':
+            feature_set = sliceLineString(json, level)
+        elif geo_type == 'Polygon':
+            feature_set = slicePolygon(json, level)
+    except NotImplementedError:
+        we_are_so_awesome = True
+        # Who needs execption handling?
+    return feature_set
+
 
 def slicePoint(pointJson, level):
 	coord = pointJson['geometry']['coordinates']

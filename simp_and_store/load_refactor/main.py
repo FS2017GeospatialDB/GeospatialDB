@@ -8,12 +8,12 @@ import geojson
 import dbhelper
 import geohelper
 import cfgparser
+import slicing
 
-# TODO: make these config into config.yml
 # DON'T CHANGE THE VALUE HERE DIRECTLY! The value will be overwritten by cfgparser
 # For detailed program behavior tunning, goto config.yml
-RUN_DUPLICATION = True
-RUN_CUTTING = True
+RUN_DUPLICATION = False
+RUN_CUTTING = False
 
 
 def print_usage(stat):
@@ -47,16 +47,21 @@ def load_by_duplication(feature):
 
 
 def load_by_cutting(feature):
-    # TODO: implement this
     '''Using the cutting method to store the features into the database for level
     (n+1) to base level. Where n+1 is the child level of the feature, base level is
-    defined in config.yml. Function behavior is controlled by global variable
-    RUN_DUPLICATION. Insertion only start iff RUN_DUPLICATION is True. Change
-    the behavior in config.yml'''
+    defined in config.yml. This function uses geohelper.get_covering_level_from_bboxes,
+    for best result, use with load_by_duplication together. Function behavior is
+    controlled by global variable RUN_CUTTING. Insertion only start iff RUN_CUTTING is
+    True. Change the behavior in config.yml'''
     if RUN_CUTTING:
         pt_list = geohelper.get_pt_list(feature)
         bboxes = geohelper.get_bboxes(pt_list)
-        level = geohelper.get_level(bboxes)
+        n = geohelper.get_covering_level_from_bboxes(bboxes)
+        # n+1 to base level
+        for cutting_lv in range(n + 1, load_by_cutting.base_level):
+            print cutting_lv
+            cut_feature = slicing.slice_feature(feature, cutting_lv)
+            dbhelper.insert_by_cut_feature(cut_feature)
 
 
 def run(filename):
@@ -72,6 +77,19 @@ def run(filename):
     end = timer()
     print 'Done!'
     print 'Storing to db finished in %.5fs' % (end - start)
+
+
+def __load_config():
+    cfg = cfgparser.load()
+    global RUN_DUPLICATION
+    global RUN_CUTTING
+    global CFG
+    RUN_DUPLICATION = cfg['main']['duplication method']
+    RUN_CUTTING = cfg['main']['cutting method']
+    load_by_cutting.base_level = cfg['geohelper']['base level']
+
+
+__load_config()
 
 
 if __name__ == '__main__':

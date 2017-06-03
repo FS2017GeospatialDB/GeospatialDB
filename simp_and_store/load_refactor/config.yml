@@ -5,7 +5,7 @@ geohelper:
   # the maximum level to store is the base level, the minimum level to store is the 
   # top level. If a feature is too large to store into a single top level tile, it will
   # be stored in all overlapping top level tiles
-  base level: 16
+  base level: 13
   top level: 4
 
   # Num covering limit defines the maximum number of tiles allowed for a feature to store
@@ -15,4 +15,10 @@ geohelper:
   num covering limit: 3
 
 dbhelper:
+  list of node: ['127.0.0.1']
+  key space: 'global'
   truncate table when start: true
+
+main:
+  duplication method: true
+  cutting method: false

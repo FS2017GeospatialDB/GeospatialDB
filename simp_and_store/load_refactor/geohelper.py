@@ -55,7 +55,7 @@ def find_xtrem_coord(pt_list):
     return min_lat, max_lat, min_lng, max_lng
 
 
-def get_geo_type(feature):
+def get_type(feature):
     '''Return the feature\'s geo type'''
     return feature['geometry']['type']
 
@@ -198,6 +198,15 @@ def get_coverer_bad(bbox):
         print 'Encountered a feature with level < 8'
 
 
+def get_diag_distance(bbox):
+    '''Given the boundary box of the feature, find the diagnoal distance of the bbox'''
+    top_left = bbox[0]
+    bottom_right = bbox[1]
+    ll_top_left = S2LatLng.FromDegrees(top_left[0], top_left[1])
+    ll_bottom_right = S2LatLng.FromDegrees(bottom_right[0], bottom_right[1])
+    return ll_top_left.GetDistance(ll_bottom_right).abs().radians()
+
+
 def get_level(bbox):
     '''Given the boundary box of the feature, find the most approprate level of that region.
     The function behavior is controlled by base level and top level defined in config.yml
@@ -211,16 +220,42 @@ def get_level(bbox):
     digonal_distance = ll_top_left.GetDistance(ll_bottom_right).abs().radians()
 
     level = kAvgDiag.get_min_lv(digonal_distance)
-    # restrict the max level to base level, if the generated level is larger than that
+    # restrict the max level to base level, if the generated level is larger
+    # than that
     level = BASE_LEVEL if level > BASE_LEVEL else level
-    # restrict the min level to top level, just in case that feature is too large
+    # restrict the min level to top level, just in case that feature is too
+    # large
     level = MIN_LEVEL if level < MIN_LEVEL else level
     return level
 
 
+def get_covering_level_from_bboxes(bboxes):
+    '''Given bboxes, obtain the minimum covering level of the bboxes. Equivalent to call
+    get_covering_level multiple times and take the minimum'''
+    minimum = 30
+    for bbox in bboxes:
+        covering_level = get_covering_level(bbox)
+        if minimum > covering_level:
+            minimum = covering_level
+    return minimum
+
+
+def get_covering_level(bbox):
+    '''Given the bbox, obtain the covering level of the feature. The data is stored as a side
+    effect of function: get_covering. If you call this function on a feature before get_covering,
+    Then the program simply runs get_level'''
+    hash_value = hash(bbox)
+    if not get_covering_level.dictionary.has_key(hash_value):
+        print "get_covering_level: Encountered an uncached feature"
+        get_covering_level.dictionary[hash(bbox)] = get_level(bbox)
+    return get_covering_level.dictionary[hash(bbox)]
+
+
 def get_covering(bbox):
     '''Given the boundary box, find the most reasonable region covering
-    of the area'''
+    of the area. A side effect of this function: each time a feature is processed, it keeps
+    the final covering level of the feature. To obtain the covering level, call function
+    get_covering_level'''
     # This part of the code dulplicates with get_level(). Remain here for slight efficiency
     # As if call get_level, multiple copies of ll_top_left, etc. need to be created,
     # because llrect will still use those variables.
@@ -235,9 +270,11 @@ def get_covering(bbox):
 
     level = kAvgDiag.get_min_lv(digonal_distance)
 
-    # restrict the max level to base level, if the generated level is larger than that
+    # restrict the max level to base level, if the generated level is larger
+    # than that
     level = BASE_LEVEL if level > BASE_LEVEL else level
-    # restrict the min level to top level, just in case that feature is too large
+    # restrict the min level to top level, just in case that feature is too
+    # large
     level = MIN_LEVEL if level < MIN_LEVEL else level
 
     covering = []
@@ -253,6 +290,9 @@ def get_covering(bbox):
         if level < MIN_LEVEL:
             print 'A FEATURE HITS MIN_LEVEL LIMIT:', MIN_LEVEL
             break
+
+    # store the final level to get_covering_level
+    get_covering_level.dictionary[hash(bbox)] = level
 
     ################DEBUG FUNCTION CALLS###########
     __print_new_low_lv(level)
@@ -316,6 +356,7 @@ def __load_config():
 
 
 ############# INITIALIZE ############
+get_covering_level.dictionary = dict()
 __print_new_low_lv.min_lv = 30
 __print_new_many_covering.max_covering = 1
 __load_config()

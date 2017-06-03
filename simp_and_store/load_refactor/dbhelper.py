@@ -1,24 +1,22 @@
 '''Dbhelper module, this module contains the abstraction of storing data into database'''
 
-from uuid import uuid1 as timeuuid
 import ctypes
 import atexit
 import geojson
 import geohelper
+from s2 import *
 from cassandra.cluster import Cluster
 from cassandra.util import HIGHEST_TIME_UUID
 import cfgparser
 
+CFG = cfgparser.load_module('dbhelper')
 
-TRUNCATE_TABLE_WHEN_START = True
 
-# TODO: the following parameters need to be added to config.yml
-# CLUSTER_LIST = ['192.168.1.10']
-CLUSTER_LIST = None
-
+TRUNCATE_TABLE_WHEN_START = CFG['truncate table when start']
+CLUSTER_LIST = CFG['list of node']
+KEYSPACE = CFG['key space']
 CLUSTER = Cluster(CLUSTER_LIST)
-SESSION = CLUSTER.connect('global')
-
+SESSION = CLUSTER.connect(KEYSPACE)
 PS_INSERT = '''INSERT INTO slave (level, s2_id, time, osm_id, json) VALUES (?, ?, ?, ?, ?)'''
 PREPARED_INSERT = SESSION.prepare(PS_INSERT)
 
@@ -46,6 +44,12 @@ def insert_by_bboxes(bboxes, feature):
             insert_by_covering(covering, feature)
 
 
+def insert_by_cut_feature(cut_feature_set):
+    '''Given the cut feature dictionary, insert pieces to the corresponding place'''
+    for cellid, feature in cut_feature_set.iteritems():
+        insert_by_covering(S2CellId(cellid), feature)
+
+
 def __initialize():
     '''DO NOT CALL THIS FUNCTION. Initializing the module. '''
     if TRUNCATE_TABLE_WHEN_START:
@@ -57,12 +61,7 @@ def __before_exit():
     if insert_by_covering.handle is not None:
         print 'Waiting for database to finish up...'
         insert_by_covering.handle.result()
-
-
-def __load_config():
-    cfg = cfgparser.load_module('dbhelper')
-    global TRUNCATE_TABLE_WHEN_START
-    TRUNCATE_TABLE_WHEN_START = cfg['truncate table when start']
+    CLUSTER.shutdown()
 
 
 
