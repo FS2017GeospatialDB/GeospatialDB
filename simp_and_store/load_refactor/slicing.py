@@ -26,13 +26,15 @@ def slice_feature(json, level):
             feature_set = sliceLineString(json, level)
         elif geo_type == 'Polygon':
             feature_set = slicePolygon(json, level)
-    except NotImplementedError:
-        we_are_so_awesome = True
-        # Who needs execption handling?
+        elif geo_type == 'MultiPolygon':
+        	feature_set = sliceMultiPolygon(json, level)
+    except NotImplementedError,e:
+    	# Who needs execption handling?
+    	print ">>> NotImplementedError: %s" % e
     return feature_set
 
-
 def slicePoint(pointJson, level):
+	pointJson = deepcopy(pointJson)
 	coord = pointJson['geometry']['coordinates']
 	latlng = s2sphere.LatLng.from_degrees(coord[1], coord[0])
 	cellID = s2sphere.CellId.from_lat_lng(latlng).parent(level).id()
@@ -40,6 +42,7 @@ def slicePoint(pointJson, level):
 	return {cellID: pointJson}
 
 def sliceMultiPoint(multiPointJson, level):
+	multiPointJson = deepcopy(multiPointJson)
 	coords = multiPointJson['geometry']['coordinates']
 	multiPointJson['geometry']['coordinates'] = []
 	pointJson = dict(multiPointJson)
@@ -62,7 +65,8 @@ def sliceMultiPoint(multiPointJson, level):
 
 	return result
 
-def sliceLineString(lineStringJson, level):
+def sliceLineString(lineStringJson, level, clockwise = True):
+	lineStringJson = deepcopy(lineStringJson)
 	line = lineStringJson['geometry']['coordinates']
 	lineStringJson['geometry']['coordinates'] = []
 	pointJson = deepcopy(lineStringJson)
@@ -166,6 +170,12 @@ def sliceLineString(lineStringJson, level):
 					result[nextCell.id()] = deepcopy(lineStringJson)
 				result[nextCell.id()]['geometry']['coordinates'].append([fakePoint.to_lat_lng().lng().degrees, fakePoint.to_lat_lng().lat().degrees, 'EE' + decisionCode[1]])
 
+				# Wrap the Corner (if necessary)
+				if len(result[nextCell.id()]['geometry']['coordinates']) > 1:
+					newPoints = wrapCorner(nextCell.id(), clockwise, result[nextCell.id()]['geometry']['coordinates'][-2][2], result[nextCell.id()]['geometry']['coordinates'][-1][2])
+					if newPoints != None:
+						result[nextCell.id()]['geometry']['coordinates'][-1:-1] = newPoints
+
 				lastCell, lastPoint = nextCell, fakePoint
 
 			else:
@@ -177,6 +187,7 @@ def sliceLineString(lineStringJson, level):
 
 # Untested
 def sliceMultiLineString(multiLineStringJson, level):
+	multiLineStringJson = deepcopy(multiLineStringJson)
 	lines = multiLineStringJson['geometry']['coordinates']
 	multiLineStringJson['geometry']['coordinates'] = []
 	lineStringJson = deepcopy(multiLineStringJson)
@@ -200,6 +211,7 @@ def sliceMultiLineString(multiLineStringJson, level):
 
 # Untested
 def slicePolygon(polygonJson, level):
+	polygonJson = deepcopy(polygonJson)
 	lines = polygonJson['geometry']['coordinates']
 	polygonJson['geometry']['coordinates'] = [[]]
 	lineStringJson = deepcopy(polygonJson)
@@ -212,7 +224,7 @@ def slicePolygon(polygonJson, level):
 	for line in lines:
 		clockwise = isClockwise(line)
 		lineStringJson['geometry']['coordinates'] = line
-		lineLocations = sliceLineString(lineStringJson, level)
+		lineLocations = sliceLineString(lineStringJson, level, clockwise)
 
 		for location in lineLocations.keys():
 			if not location in result.keys():
@@ -267,7 +279,31 @@ def slicePolygon(polygonJson, level):
 		if right.id() not in frontier and right.id() not in searched and right.id() not in edgeCells:
 			frontier.append(right.id())
 	"""
+	
+	return result
 
+# Untested
+def sliceMultiPolygon(multiPolygonJson, level):
+	multiPolygonJson = deepcopy(multiPolygonJson)
+	polygons = multiPolygonJson['geometry']['coordinates']
+	multiPolygonJson['geometry']['coordinates'] = []
+	polygonJson = deepcopy(multiPolygonJson)
+	polygonJson['geometry']['type'] = 'Polygon'
+
+	result = {}
+	for polygon in polygons:
+		polygonJson['geometry']['coordinates'] = polygon
+		polygonLocations = slicePolygon(polygonJson, level)
+
+		for location in polygonLocations.keys():
+			if not location in result:
+				result[location] = deepcopy(multiPolygonJson)
+			result[location]['geometry']['coordinates'].append(polygonLocations[location]['geometry']['coordinates'])
+
+	for location in result:
+		if len(result[location]) == 1:
+			result[location]['geometry']['type'] = 'Polygon'
+			result[location]['geometry']['coordinates'] = result[location]['geometry']['coordinates'][0]
 	return result
 
 # Untested
