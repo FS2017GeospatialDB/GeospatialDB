@@ -11,6 +11,7 @@ toTop = {0:2, 1:2, 2:3, 3:2, 4:2, 5:0}
 toBottom = {0:5, 1:5, 2:0, 3:5, 4:5, 5:3}
 
 def slicePoint(pointJson, level):
+	pointJson = deepcopy(pointJson)
 	coord = pointJson['geometry']['coordinates']
 	latlng = s2sphere.LatLng.from_degrees(coord[1], coord[0])
 	cellID = s2sphere.CellId.from_lat_lng(latlng).parent(level).id()
@@ -18,6 +19,7 @@ def slicePoint(pointJson, level):
 	return {cellID: pointJson}
 
 def sliceMultiPoint(multiPointJson, level):
+	multiPointJson = deepcopy(multiPointJson)
 	coords = multiPointJson['geometry']['coordinates']
 	multiPointJson['geometry']['coordinates'] = []
 	pointJson = dict(multiPointJson)
@@ -41,6 +43,7 @@ def sliceMultiPoint(multiPointJson, level):
 	return result
 
 def sliceLineString(lineStringJson, level, clockwise = True):
+	lineStringJson = deepcopy(lineStringJson)
 	line = lineStringJson['geometry']['coordinates']
 	lineStringJson['geometry']['coordinates'] = []
 	pointJson = deepcopy(lineStringJson)
@@ -161,6 +164,7 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 
 # Untested
 def sliceMultiLineString(multiLineStringJson, level):
+	multiLineStringJson = deepcopy(multiLineStringJson)
 	lines = multiLineStringJson['geometry']['coordinates']
 	multiLineStringJson['geometry']['coordinates'] = []
 	lineStringJson = deepcopy(multiLineStringJson)
@@ -184,6 +188,7 @@ def sliceMultiLineString(multiLineStringJson, level):
 
 # Untested
 def slicePolygon(polygonJson, level):
+	polygonJson = deepcopy(polygonJson)
 	lines = polygonJson['geometry']['coordinates']
 	polygonJson['geometry']['coordinates'] = [[]]
 	lineStringJson = deepcopy(polygonJson)
@@ -258,6 +263,7 @@ def slicePolygon(polygonJson, level):
 
 # Untested
 def sliceMultiPolygon(multiPolygonJson, level):
+	multiPolygonJson = deepcopy(multiPolygonJson)
 	polygons = multiPolygonJson['geometry']['coordinates']
 	multiPolygonJson['geometry']['coordinates'] = []
 	polygonJson = deepcopy(multiPolygonJson)
