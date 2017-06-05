@@ -12,6 +12,10 @@ DEFAULT_BASE_LEVEL = 16
 DEFAULT_MIN_LEVEL = 4
 DEFAULT_NUM_COVERING_LIMIT = 3
 
+# Default values for main
+DEFAULT_RUN_DUPLICATION = True
+DEFAULT_RUN_CUTTING = True
+
 
 def __load_or_default(module, key, default_value, cfg):
     if not cfg.has_key(module):

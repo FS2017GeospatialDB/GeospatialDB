@@ -1,0 +1,54 @@
+Point           
+    "coordinates": [100.0, 0.0]
+
+if Point:
+    coord = feature['geometry']['coordinates']
+
+LineString
+    "coordinates": [ 
+                        [100.0, 0.0], [101.0, 1.0] 
+                    ]
+
+if LineString:
+    points = feature['geometry']['coordinates']
+
+MultiLineString
+     "coordinates": [
+                        [ 
+                            [100.0, 0.0], [101.0, 1.0] 
+                        ],
+                        [ 
+                            [102.0, 2.0], [103.0, 3.0] 
+                        ]
+                    ]
+
+Polygon    
+    "coordinates": [
+                        [ 
+                            [100.0, 0.0], [101.0, 0.0], [101.0, 1.0], [100.0, 1.0], [100.0, 0.0] 
+                        ]
+                    ]
+    (with holes)
+    "coordinates": [
+                        [ 
+                            [100.2, 0.2], [100.8, 0.2], [100.8, 0.8], [100.2, 0.8], [100.2, 0.2] 
+                        ],
+                        [ 
+                            [100.0, 0.0], [101.0, 0.0], [101.0, 1.0], [100.0, 1.0], [100.0, 0.0] 
+                        ]
+                    ]
+
+MultiPoint
+    
+
+
+MultiPolygon
+
+
+The following types can be simplified if needed:
+LineString,
+Polygon,
+MultiLineString,
+MultiPolygon
+
+tolerance: 0.15
