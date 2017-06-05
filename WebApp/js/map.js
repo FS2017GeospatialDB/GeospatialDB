@@ -38,16 +38,16 @@ var map = (function() {
 					infoWindow.style.display = "";
 					console.log(feature.properties);
 					var form = document.getElementById('iw_form_parent');
-					form.innerHTML = "<div class='form-group'><label for='osm_id' class='label-primary'>OSM ID:</label><input class='form-control' type='text' id='osm_id' value="
-						+ feature.properties[key] + " disabled></div>";
+					form.innerHTML = "<div class='form-group'><div class='col-md-4 col-sm-12'><span for='osm_id' class='label label-primary'>OSM ID</span></div><div class='col-md-8 col-sm-12'><input type='text' id='osm_id' class='form-control' value="
+						+ feature.properties["id"] + " disabled></div>";
 
 
 					for (var key in feature.properties) {
 						if (feature.properties.hasOwnProperty(key)) {
 							if (key == "id") continue;
 							
-							form.innerHTML+="<div class='form-group'><label for='" + key +"' class='label-info'>" + key 
-								+ ":</label><input type='text' class='form-control' id='" + key + "' value='" + feature.properties[key] + "'></div>";
+							form.innerHTML+="<div class='form-group'><div class='col-md-4 col-sm-12'><span for='" + key +"' class='label label-info'>" + key 
+								+ "</span></div><div class='col-md-8 col-sm-12'><input type='text' class='form-control' id='" + key + "' placeholder='" + feature.properties[key] + "'></div>";
 							console.log(key + " -> " + feature.properties[key]);
 						}
 					}

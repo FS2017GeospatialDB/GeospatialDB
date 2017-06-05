@@ -39,10 +39,10 @@
     <div class="row mt-10 withPadding">
       <div class="container-fluid">
         <div class="col-sm-6"></div>
-        <div class="col-sm-4 col-sm-offset-2">
+        <div class="col-sm-5 col-sm-offset-1">
           <div class="panel">
             <div class="panel-body">
-              <div class="container-fluid">
+              <div class="container-fluid smallPadding">
                 <br>
                 <div class="row col-md-12">
                   <div class="toggleDiv col-md-6">
@@ -93,19 +93,19 @@
                   </div>
                 </div>
                 <div class="row">
-                  <div class="col-12 col-lg-6">
+                  <div class="col-sm-12 col-lg-6">
                     <button type="button" class="btn btn-primary btn-block" onclick="map.submitPointQuery()">Point Query</button>
                   </div>
-                  <div class="col-12 col-lg-6">
+                  <div class="col-sm-12 col-lg-6">
                     <button type="button" class="btn btn-primary btn-block" onclick="map.submitRegionQuery()" id="submit">Region Query</button>
                   </div>
                 </div>
-		<br>
+                <br>
                 <div class="row">
-                  <div class="col-12 col-lg-6">
+                  <div class="col-sm-12 col-lg-6">
                     <button type="button" class="btn btn-block" style="white-spce: normal;word-wrap: break-word" onclick="map.deleteFeature()" id="???">??? Feature</button>
                   </div>
-                  <div class="col-12 col-lg-6">
+                  <div class="col-sm-12 col-lg-6">
                     <button type="button" class="btn btn-primary btn-block" onclick="map.addFeature()" id="add">Add Feature</button>
                   </div>
                 </div>
@@ -117,7 +117,7 @@
         <div class="col-sm-4 col-sm-offset-2">
           <div class="panel" id="info_window" style="display:none">
             <div class="panel-body">
-              <div class="container-fluid" id="iw_form_parent"></div>
+              <div class="container-fluid smallPadding" style="overflow-y:auto; height:300px;" id="iw_form_parent"></div>
               <div class="row">
                 <div class="col-12 col-lg-4">
                   <button type="button" class="btn btn-block" style="white-spce: normal;word-wrap: break-word" id="cancel" onclick="cancel('info_window', 'iw_form_parent')">Cancel</button>
@@ -128,6 +128,7 @@
                 <div class="col-12 col-lg-4">
                   <button type="button" class="btn btn-primary btn-block" onclick="map.addFeature()" id="edit">Submit</button>
                 </div>
+			  </div>
             </div>
           </div>
         </div>
