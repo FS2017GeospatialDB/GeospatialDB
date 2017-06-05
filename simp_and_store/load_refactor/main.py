@@ -49,29 +49,35 @@ def load_by_duplication(feature):
 def load_by_cutting(feature):
     '''Using the cutting method to store the features into the database for level
     (n+1) to base level. Where n+1 is the child level of the feature, base level is
-    defined in config.yml. This function uses geohelper.get_covering_level_from_bboxes,
-    for best result, use with load_by_duplication together. Function behavior is
-    controlled by global variable RUN_CUTTING. Insertion only start iff RUN_CUTTING is
-    True. Change the behavior in config.yml'''
+    defined in config.yml. This function uses geohelper.get_covering_level_from_bboxes
+    to find the root level (best approximation) of the feature. For best result, use
+    with load_by_duplication together. Function behavior is controlled by global variable
+    RUN_CUTTING. Insertion only start iff RUN_CUTTING is True. Change the behavior in config.yml'''
     if RUN_CUTTING:
         pt_list = geohelper.get_pt_list(feature)
         bboxes = geohelper.get_bboxes(pt_list)
         n = geohelper.get_covering_level_from_bboxes(bboxes)
-        # n+1 to base level. The situation may be n+1 is even larger than
-        # base level, for specific base level required (e.g. lv13)
-        # so an if statement here guarentee the loading of the feature to
-        # at least 1 tile
-        print 'start lv=', n + 1
-        print geohelper.get_type(feature)
-        if n + 1 > load_by_cutting.base_level:
-            cut_feature = slicing.slice_feature(feature, n + 1)
+        # for n+1 to base level. The situation may be n+1 is even larger than
+        # base level, for specific base level required (e.g. lv13).
+        # So an if statement here guarentees the loading of the feature to
+        # at least lv n+1 once.
+        # Second edition: we don't actually need to store the feature at least
+        # once. Because we are using both cutting and duplication methond the
+        # same time. Duplication guarentees to store the feature, thus no need
+        # to store an unnecessary copy here again.
+        # if n + 1 > load_by_cutting.base_level:
+        #     cut_feature = slicing.slice_feature(feature, n + 1)
+        #     dbhelper.insert_by_cut_feature(cut_feature)
+        # else:
+        #     # end + 1 because we want base level inclusive
+        #     for cutting_lv in range(n + 1, load_by_cutting.base_level + 1):
+        #         cut_feature = slicing.slice_feature(feature, cutting_lv)
+        #         dbhelper.insert_by_cut_feature(cut_feature)
+
+        # end + 1 because we want base level inclusive
+        for cutting_lv in range(n + 1, load_by_cutting.base_level + 1):
+            cut_feature = slicing.slice_feature(feature, cutting_lv)
             dbhelper.insert_by_cut_feature(cut_feature)
-        else:
-            # end + 1 because we want base level inclusive
-            for cutting_lv in range(n + 1, load_by_cutting.base_level + 1):
-                print 'current lv=', cutting_lv
-                cut_feature = slicing.slice_feature(feature, cutting_lv)
-                dbhelper.insert_by_cut_feature(cut_feature)
 
 
 def run(filename):

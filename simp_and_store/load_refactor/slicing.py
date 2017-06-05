@@ -6,6 +6,8 @@ import geohelper
 
 from copy import deepcopy
 
+DEBUG_PRINT = False
+
 toLeft = {0:4, 1:0, 2:4, 3:1, 4:3, 5:4}
 toRight = {0:1, 1:3, 2:1, 3:4, 4:0, 5:1}
 toTop = {0:2, 1:2, 2:3, 3:2, 4:2, 5:0}
@@ -30,7 +32,7 @@ def slice_feature(json, level):
         	feature_set = sliceMultiPolygon(json, level)
     except NotImplementedError,e:
     	# Who needs execption handling?
-    	print ">>> NotImplementedError: %s" % e
+    	if DEBUG_PRINT: print ">>> NotImplementedError: %s" % e
     return feature_set
 
 def slicePoint(pointJson, level):
@@ -92,7 +94,7 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 				if lastCell.face() != cell.face():
 					s3,t3 = get_st(lastPoint)
 					s4,t4 = get_st_for_face(lastPoint.face(), get_closest_xyz(lastPoint, point))
-					print "(Different Face)", get_closest_xyz(lastPoint, point)
+					if DEBUG_PRINT: print "(Different Face)", get_closest_xyz(lastPoint, point)
 					raise NotImplementedError("LineStrings on different faces not implemented.")
 
 				# Handle Same Side
@@ -145,16 +147,16 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 				face,i,j = lastCell.face(), s2sphere.CellId.st_to_ij((decision * (s4 - s3)) + s3), s2sphere.CellId.st_to_ij((decision * (t4 - t3)) + t3)
 				fakeS,fakeT = get_st_for_face(nextCell.face(), get_xyz(s2sphere.CellId.from_face_ij(face, i, j)))
 				fakePoint = s2sphere.CellId.from_face_ij(nextCell.face(), s2sphere.CellId.st_to_ij(fakeS), s2sphere.CellId.st_to_ij(fakeT))
-
-				if decision == rightT:
-					print "Right!\t",
-				elif decision == leftT:
-					print "Left!\t",
-				elif decision == upT:
-					print "Up!\t",
-				elif decision == downT:
-					print "Down!\t",
-				print lastCell.id(), nextCell.id()			
+				if DEBUG_PRINT:
+					if decision == rightT:
+						print "Right!\t",
+				 	elif decision == leftT:
+						print "Left!\t",
+				 	elif decision == upT:
+						print "Up!\t",
+				 	elif decision == downT:
+						print "Down!\t",
+				 	print lastCell.id(), nextCell.id()			
 				
 				"""
 				print leftT, rightT, upT, downT
@@ -450,7 +452,7 @@ def get_closest_xyz(srcCell, destCell):
 			xb,yb,zb = translate(offset[0] + rot[0][0] + rot[1][0], offset[1] + rot[0][1] + rot[1][1], offset[2] + rot[0][2] + rot[1][2], xb, yb, zb)
 			score3 = distance(srcX, srcY, srcZ, xb, yb, zb)
 
-			print x,y,z,xa,ya,za,xb,yb,zb
+			if DEBUG_PRINT: print x,y,z,xa,ya,za,xb,yb,zb
 			if score2 < score1:
 				x,y,z = xa,ya,za
 				score1 = score2
