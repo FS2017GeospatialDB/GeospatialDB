@@ -38,8 +38,7 @@ def insert_by_bboxes(bboxes, feature):
     for bbox in bboxes:
         coverings = geohelper.get_covering(bbox)
         for covering in coverings:
-            a = 0
-            # insert_by_covering(covering, feature)
+            insert_by_covering(covering, feature)
 
 
 def __initialize():
