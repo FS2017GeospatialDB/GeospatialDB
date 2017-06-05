@@ -24,6 +24,7 @@ def propogate():
     ''')
     slave_insert_null_ps = session.prepare('''
         INSERT INTO slave(level, s2_id, time, osm_id)
+        VALUES (?, ?, ?, ?)
     ''')
     slave_insert_ps = session.prepare('''
         INSERT INTO slave(level, s2_id, time, osm_id, json)
