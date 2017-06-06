@@ -1,9 +1,9 @@
 import math
 import numpy
 import geojson
+import s2sphere
 import geohelper
 
-from s2 import *
 from copy import deepcopy
 
 DEBUG_PRINT = False
@@ -31,15 +31,15 @@ def slice_feature(json, level):
         elif geo_type == 'MultiPolygon':
         	feature_set = sliceMultiPolygon(json, level)
     except NotImplementedError,e:
-    	# Who needs execption handling? This is a reminder that stuff is broken...
-    	print ">>> NotImplementedError: %s" % e
+    	# Who needs execption handling?
+    	if DEBUG_PRINT: print ">>> NotImplementedError: %s" % e
     return feature_set
 
 def slicePoint(pointJson, level):
 	pointJson = deepcopy(pointJson)
 	coord = pointJson['geometry']['coordinates']
-	latlng = S2LatLng.FromDegrees(coord[1], coord[0])
-	cellID = S2CellId.FromLatLng(latlng).parent(level).id()
+	latlng = s2sphere.LatLng.from_degrees(coord[1], coord[0])
+	cellID = s2sphere.CellId.from_lat_lng(latlng).parent(level).id()
 
 	return {cellID: pointJson}
 
@@ -77,12 +77,12 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 	result = {}
 	lastCell = lastPoint = None
 	for point in line:
-		cell = S2CellId.FromLatLng(S2LatLng.FromDegrees(point[1], point[0])).parent(level)
-		point = S2CellId.FromLatLng(S2LatLng.FromDegrees(point[1], point[0]))
+		cell = s2sphere.CellId.from_lat_lng(s2sphere.LatLng.from_degrees(point[1], point[0])).parent(level)
+		point = s2sphere.CellId.from_lat_lng(s2sphere.LatLng.from_degrees(point[1], point[0]))
 
 		success = False
 		while not success:
-			if lastCell is None:
+			if lastCell == None:
 				lastCell = cell
 				lastPoint = point
 				result[cell.id()] = deepcopy(lineStringJson)
@@ -102,8 +102,8 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 					s3,t3 = get_st(lastPoint)
 					s4,t4 = get_st(point)
 
-				cs1, ct1 = get_st_for_face(lastCell.face(), get_xyz(S2CellId.from_point(S2Cell.Init(lastCell).GetVertex(0))))
-				cs2, ct2 = get_st_for_face(lastCell.face(), get_xyz(S2CellId.from_point(S2Cell.Init(lastCell).GetVertex(2))))
+				cs1, ct1 = get_st_for_face(lastCell.face(), get_xyz(s2sphere.CellId.from_point(s2sphere.Cell(lastCell).get_vertex(0))))
+				cs2, ct2 = get_st_for_face(lastCell.face(), get_xyz(s2sphere.CellId.from_point(s2sphere.Cell(lastCell).get_vertex(2))))
 				rightT, leftT, upT, downT = max(cs1, cs2) - s3, min(cs1, cs2) - s3, max(ct1, ct2) - t3, min(ct1, ct2) - t3
 				
 				if rightT == 0:
@@ -128,12 +128,12 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 					upT = downT = float('inf')
 
 				decision = min(max(leftT, rightT), max(upT, downT))
-				down, right, up, left = lastCell.GetEdgeNeighbors()
-				nextCell = S2CellId(right.id() if (decision == rightT) \
+				down, right, up, left = lastCell.get_edge_neighbors()
+				nextCell = s2sphere.CellId(right.id() if (decision == rightT) \
 					else (left.id() if (decision == leftT) \
 						else (up.id() if (decision == upT) \
 							else down.id())))
-				nextCell = S2CellId(right.id() if (cell.id() == right.id()) \
+				nextCell = s2sphere.CellId(right.id() if (cell.id() == right.id()) \
 					else (left.id() if (cell.id() == left.id()) \
 						else (up.id() if (cell.id() == up.id()) \
 							else (down.id() if (cell.id() == down.id()) \
@@ -144,9 +144,9 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 							else ['D','U'])))
 
 
-				face,i,j = lastCell.face(), S2CellId.STtoUV((decision * (s4 - s3)) + s3), S2CellId.STtoUV((decision * (t4 - t3)) + t3)
-				fakeS,fakeT = get_st_for_face(nextCell.face(), get_xyz(S2CellId.FromFaceIJ(face, i, j)))
-				fakePoint = S2CellId.FromFaceIJ(nextCell.face(), S2CellId.STtoUV(fakeS), S2CellId.STtoUV(fakeT))
+				face,i,j = lastCell.face(), s2sphere.CellId.st_to_ij((decision * (s4 - s3)) + s3), s2sphere.CellId.st_to_ij((decision * (t4 - t3)) + t3)
+				fakeS,fakeT = get_st_for_face(nextCell.face(), get_xyz(s2sphere.CellId.from_face_ij(face, i, j)))
+				fakePoint = s2sphere.CellId.from_face_ij(nextCell.face(), s2sphere.CellId.st_to_ij(fakeS), s2sphere.CellId.st_to_ij(fakeT))
 				if DEBUG_PRINT:
 					if decision == rightT:
 						print "Right!\t",
@@ -163,14 +163,14 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 				print "Box: ", min(cs1, cs2), min(ct1, ct2), max(cs1, cs2), max(ct1, ct2)
 				print "Current: ", s3, t3
 				print "Target: ", s4, t4
-				print "Fake Point: ", fakePoint.ToLatLng()
+				print "Fake Point: ", fakePoint.to_lat_lng()
 				print
 				"""
 
-				result[lastCell.id()]['geometry']['coordinates'].append([fakePoint.ToLatLng().lng().degrees, fakePoint.ToLatLng().lat().degrees, 'EL' + decisionCode[0]])
+				result[lastCell.id()]['geometry']['coordinates'].append([fakePoint.to_lat_lng().lng().degrees, fakePoint.to_lat_lng().lat().degrees, 'EL' + decisionCode[0]])
 				if not nextCell.id() in result:
 					result[nextCell.id()] = deepcopy(lineStringJson)
-				result[nextCell.id()]['geometry']['coordinates'].append([fakePoint.ToLatLng().lng().degrees, fakePoint.ToLatLng().lat().degrees, 'EE' + decisionCode[1]])
+				result[nextCell.id()]['geometry']['coordinates'].append([fakePoint.to_lat_lng().lng().degrees, fakePoint.to_lat_lng().lat().degrees, 'EE' + decisionCode[1]])
 
 				# Wrap the Corner (if necessary)
 				if len(result[nextCell.id()]['geometry']['coordinates']) > 1:
@@ -181,7 +181,7 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 				lastCell, lastPoint = nextCell, fakePoint
 
 			else:
-				result[cell.id()]['geometry']['coordinates'].append([point.ToLatLng().lng().degrees, point.ToLatLng().lat().degrees])
+				result[cell.id()]['geometry']['coordinates'].append([point.to_lat_lng().lng().degrees, point.to_lat_lng().lat().degrees])
 				lastPoint = point
 				success = True
 
@@ -329,7 +329,7 @@ def wrapCorner(s2_id, clockwise, start_code, end_code):
 		curEdge = sides[start]
 		nextEdge = sides[(start + delta) % len(sides)]
 
-		latlng = getCornerLatLong(S2CellId(s2_id), curEdge, nextEdge)
+		latlng = getCornerLatLong(s2sphere.CellId(s2_id), curEdge, nextEdge)
 		result.append([latlng.lng().degrees, latlng.lat().degrees, 'C'+curEdge+nextEdge])
 
 		start = (start + delta) % len(sides)
@@ -338,19 +338,18 @@ def wrapCorner(s2_id, clockwise, start_code, end_code):
 # Untested
 def getCornerLatLong(cell, startSide, endSide):
 	if startSide in ['U', 'R'] and endSide in ['U', 'R']:
-		return S2CellId.FromPoint(S2Cell.Init(cell).GetVertex(2)).ToLatLng()
+		return s2sphere.CellId.from_point(s2sphere.Cell(cell).get_vertex(2)).to_lat_lng()
 	elif startSide in ['R', 'D'] and endSide in ['R', 'D']:
-		return S2CellId.FromPoint(S2Cell.Init(cell).GetVertex(1)).ToLatLng()
+		return s2sphere.CellId.from_point(s2sphere.Cell(cell).get_vertex(1)).to_lat_lng()
 	elif startSide in ['D', 'L'] and endSide in ['D', 'L']:
-		return S2CellId.FromPoint(S2Cell.Init(cell).GetVertex(0)).ToLatLng()
+		return s2sphere.CellId.from_point(s2sphere.Cell(cell).get_vertex(0)).to_lat_lng()
 	elif startSide in ['L', 'U'] and endSide in ['L', 'U']:
-		return S2CellId.FromPoint(S2Cell.Init(cell).GetVertex(3)).ToLatLng()
+		return s2sphere.CellId.from_point(s2sphere.Cell(cell).get_vertex(3)).to_lat_lng()
 
 def get_st(cellId):
 	# Compute s,t
-	a = b = 0
-	cellId.GetCenterUV(a, b)
-	s,t = S2CellId.UVtoST(u), S2CellId.UVtoST(v)
+	u,v = cellId.get_center_uv()
+	s,t = s2sphere.CellId.uv_to_st(u), s2sphere.CellId.uv_to_st(v)
 
 	return s,t
 
