@@ -2,6 +2,8 @@ package edu.mines.csci370;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
+import java.util.HashMap;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
@@ -23,6 +25,7 @@ import edu.mines.csci370.api.FRexpResult;
 
 public class GeoHandler implements GeolocationService.Iface {
 	private static int BASE_LEVEL = 13;
+	private static int UPPER_LEVEL = 4;
 	private static int NUM_COVERING_LIMIT = 3;
 
 	public int getMinLevel(double val) {
@@ -38,13 +41,14 @@ public class GeoHandler implements GeolocationService.Iface {
 	public int getBase(S2LatLng bottomLeft, S2LatLng topRight) {
 		double diagonal = Math.abs(bottomLeft.getDistance(topRight).radians());
 		int level = getMinLevel(diagonal);
-		if (level > BASE_LEVEL) {
-			level = BASE_LEVEL;
-		}
+		if (level > BASE_LEVEL) level = BASE_LEVEL;
+		else if(level < UPPER_LEVEL) level = UPPER_LEVEL;
+		System.out.print("Querying from level " + level);
 		return level;
 	}
 
-	public int getUpper(int baseLevel, S2LatLngRect rect) {
+	public TreeMap<Integer, ArrayList<S2CellId>> getCovers(int baseLevel, S2LatLngRect rect) {
+		TreeMap<Integer, ArrayList<S2CellId>> coverMap = new TreeMap<Integer, ArrayList<S2CellId>>();
 		ArrayList<S2CellId> covering = new ArrayList<S2CellId>();
 		int size = NUM_COVERING_LIMIT + 1;
 
@@ -53,10 +57,18 @@ public class GeoHandler implements GeolocationService.Iface {
 			coverer.setMaxLevel(baseLevel);
 			coverer.setMinLevel(baseLevel);
 			coverer.getCovering(rect, covering);
+			coverMap.put(baseLevel, covering);
 			baseLevel = baseLevel - 1;
 			size = covering.size();
+			covering = new ArrayList<S2CellId>();
+
+			if (baseLevel < UPPER_LEVEL) {
+				System.out.println("MIN LEVEL REACHED");
+				break;
+			}
 		}
-		return covering.get(0).level();
+		if (baseLevel > UPPER_LEVEL) System.out.println(" to " + (baseLevel + 1));
+		return coverMap;
 	}
 
 	@Override
@@ -68,58 +80,78 @@ public class GeoHandler implements GeolocationService.Iface {
 		S2LatLng topRight = S2LatLng.fromDegrees(tBox, rBox);
 		S2LatLngRect rect = new S2LatLngRect(bottomLeft, topRight);
 		int baseLevel = getBase(bottomLeft, topRight);
-		int upLevel = getUpper(baseLevel, rect);
 		
-		System.out.println("Beginning queries on range: " + baseLevel + " to " + upLevel);
-
-		// Determine Necessary Level
-//		double area = rect.area() * S2LatLng.EARTH_RADIUS_METERS * S2LatLng.EARTH_RADIUS_METERS;
-//		int level = 16;
-
-		// Get Cells Covering Area
-//		ArrayList<S2CellId> cells = new ArrayList<>();
-//		S2RegionCoverer coverer = new S2RegionCoverer();
-//		coverer.setMinLevel(level);
-//		coverer.setMaxLevel(level);
-//		coverer.setMaxCells(Integer.MAX_VALUE);
-//		coverer.getCovering(rect, cells);
+		TreeMap<Integer, ArrayList<S2CellId>> coveringS2Cells = getCovers(baseLevel, rect);
+		System.out.println("Key set size: " + coveringS2Cells.keySet().size());
 
 		// Lookup the Cells in the Database
-		List<Feature> results = new ArrayList<>();
 		Session session = Database.getSession();
 		// PreparedStatement statement = Database.prepareFromCache(
 		//   "SELECT unixTimestampOf(time) AS time_unix, json FROM global.slave WHERE level=? AND s2_id=? AND time >= ?");
 		PreparedStatement statement = Database.prepareFromCache(
-				"SELECT unixTimestampOf(time) AS time_unix, json FROM global.slave WHERE level=? AND s2_id=?");
+				"SELECT unixTimestampOf(time) AS time_unix, osm_id, json FROM global.slave WHERE level=? AND s2_id=?");
 
-		for (int i = baseLevel; i >= upLevel; i--) {
-			System.out.println("Querying on level " + i);
-			
-			ArrayList<S2CellId> cells = new ArrayList<>();
-			S2RegionCoverer iterCover = new S2RegionCoverer();
-			iterCover.setMinLevel(i);
-			iterCover.setMaxLevel(i);
-			iterCover.getCovering(rect, cells);
+		TreeMap<Integer, ArrayList<Feature>> featureMap = new TreeMap<Integer, ArrayList<Feature>>();
+		TreeMap<Integer, ArrayList<String>> osmIdMap = new TreeMap<Integer, ArrayList<String>>();
 
-
-			// Historical Query info
-			// System.out.println(timestampMillis);
-			// mintimeuuid: YYYY-MM-DD hh:mm+____
-
-			// Execute the Queries
-			for (S2CellId cell : cells) {
-				ResultSet rs = session.execute(statement.bind(i, cell.id()));
-
-				// ResultSet rs = session.execute(statement.bind(level, cell.id(), UUIDs.startOf(timestampMillis)));
+		for (int level: coveringS2Cells.keySet()) {
+			for (S2CellId cell: coveringS2Cells.get(level)) {
+				ResultSet rs = session.execute(statement.bind(level, cell.id()));
 
 				while (!rs.isExhausted()) {
 					Row row = rs.one();
 					Feature feature = new Feature(row.getLong("time_unix"), row.getString("json"));
-
-					results.add(feature);
+					if (!featureMap.containsKey(level)) {
+						featureMap.put(level, new ArrayList<Feature>());
+						osmIdMap.put(level, new ArrayList<String>());
+					}
+					featureMap.get(level).add(feature);
+					osmIdMap.get(level).add(row.getString("osm_id"));
 				}
 			}
 		}
+
+		HashMap<String, Feature> resultMap = new HashMap<String, Feature>();
+		for (int level: featureMap.keySet()) {
+			System.out.println(level);
+			for (int i = 0; i < featureMap.get(level).size(); i++) {
+				Feature feature = featureMap.get(level).get(i);
+				String osmId = osmIdMap.get(level).get(i);
+				if (!resultMap.containsKey(osmId)) {
+					resultMap.put(osmId, feature);
+				}
+			}
+		}
+
+		List<Feature> results = new ArrayList<Feature>(resultMap.values());
+		//		for (int i = baseLevel; i >= upLevel; i--) {
+		//			System.out.println("Querying on level " + i);
+		//
+		//			ArrayList<S2CellId> cells = new ArrayList<>();
+		//			S2RegionCoverer iterCover = new S2RegionCoverer();
+		//			iterCover.setMinLevel(i);
+		//			iterCover.setMaxLevel(i);
+		//			iterCover.getCovering(rect, cells);
+		//
+		//
+		//			// Historical Query info
+		//			// System.out.println(timestampMillis);
+		//			// mintimeuuid: YYYY-MM-DD hh:mm+____
+		//
+		//			// Execute the Queries
+		//			for (S2CellId cell : cells) {
+		//				ResultSet rs = session.execute(statement.bind(i, cell.id()));
+		//
+		//				// ResultSet rs = session.execute(statement.bind(level, cell.id(), UUIDs.startOf(timestampMillis)));
+		//
+		//				while (!rs.isExhausted()) {
+		//					Row row = rs.one();
+		//					Feature feature = new Feature(row.getLong("time_unix"), row.getString("json"));
+		//
+		//					results.add(feature);
+		//				}
+		//			}
+		//		}
 
 		long finish = System.currentTimeMillis();
 		//System.out.println(cells.size() + " queries @ scale=" + level + " in " + (finish - start) + "ms");
@@ -137,7 +169,7 @@ public class GeoHandler implements GeolocationService.Iface {
 		List<Feature> results = new ArrayList<>();
 
 		Session session = Database.getSession();
-		for (int i = 16; i > 0; i--) {
+		for (int i = BASE_LEVEL; i > 0; i--) {
 			S2CellId cell = new S2Cell(loc).id().parent(i);
 			System.out.println("Current level: " + i);
 
