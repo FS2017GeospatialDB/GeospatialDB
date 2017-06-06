@@ -1,4 +1,4 @@
-package edu.mines.csci370.api;
+package edu.mines.csci370;
 
 public class FRexpResult {
 	public int exponent = 0;

@@ -1,9 +1,8 @@
 package edu.mines.csci370;
 
+import edu.mines.csci370.api.GeolocationService;
 import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.server.TServlet;
-
-import edu.mines.csci370.api.GeolocationService;
 
 public class GeoServlet extends TServlet {
 
