@@ -15,8 +15,8 @@ geohelper:
   num covering limit: 3
 
 dbhelper:
-  list of node: ['127.0.0.1']
-  key space: 'global'
+  list of node: ['bb136-01.mines.edu', 'bb136-02.mines.edu']
+  key space: 'global01'
   truncate table when start: true
 
 main:

@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# first install all necessary files
+apt-get install g++ make cmake python2.7-dev openssl libssl-dev swig
+
+# then install c library
+cd geometry
+cmake .
+make -o3 -j
+make install
+
+# next install python binding
+cd python
+cmake .
+make -o3 -j
+make install
+
+# clean up
+make clean
+rm CMakeCache.txt Makefile install_manifest.txt cmake_install.cmake
+rm -rf CMakeFiles
+cd .. 
+make clean
+rm CMakeCache.txt Makefile install_manifest.txt cmake_install.cmake
+rm -rf CMakeFiles
+cd ..
+
+# linking
+ldconfig
+
+echo DONE!
