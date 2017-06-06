@@ -75,7 +75,7 @@ def load_by_cutting(feature):
         #         dbhelper.insert_by_cut_feature(cut_feature)
 
         # end + 1 because we want base level inclusive
-        for cutting_lv in range(n + 3, load_by_cutting.base_level + 1):
+        for cutting_lv in range(n + 1, load_by_cutting.base_level + 1):
             cut_feature = slicing.slice_feature(feature, cutting_lv)
             dbhelper.insert_by_cut_feature(cut_feature)
 
@@ -112,4 +112,3 @@ if __name__ == '__main__':
     if len(sys.argv) != 2:
         print_usage(1)
     run(sys.argv[1])
-    

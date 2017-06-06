@@ -228,7 +228,7 @@ public class GeoHandler implements GeolocationService.Iface {
         // Lookup the Cells in the Database
         Session session = Database.getSession();
         PreparedStatement statement = Database.prepareFromCache(
-                "SELECT unixTimestampOf(time) AS time_unix, osm_id, json FROM global.slave WHERE level=? AND s2_id=? AND time >= ?");
+                "SELECT unixTimestampOf(time) AS time_unix, osm_id, is_cut, json FROM global.slave WHERE level=? AND s2_id=? AND time >= ?");
 
         TreeMap<Integer, ArrayList<Feature>> featureMap = new TreeMap<Integer, ArrayList<Feature>>();
         TreeMap<Integer, ArrayList<String>> osmIdMap = new TreeMap<Integer, ArrayList<String>>();

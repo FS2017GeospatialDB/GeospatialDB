@@ -262,6 +262,8 @@ def get_covering(bbox):
             print 'A FEATURE HITS MIN_LEVEL LIMIT:', MIN_LEVEL
             break
 
+    # level + 1 to offset the -1 in the while loop
+    level = level + 1
     # store the final level to get_covering_level
     get_covering_level.dictionary[hash(bbox)] = level
 
