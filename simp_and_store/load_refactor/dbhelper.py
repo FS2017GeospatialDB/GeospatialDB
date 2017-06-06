@@ -17,7 +17,8 @@ CLUSTER_LIST = CFG['list of node']
 KEYSPACE = CFG['key space']
 CLUSTER = Cluster(CLUSTER_LIST)
 SESSION = CLUSTER.connect(KEYSPACE)
-PS_INSERT = '''INSERT INTO slave (level, s2_id, time, osm_id, json) VALUES (?, ?, ?, ?, ?)'''
+PS_INSERT = '''
+INSERT INTO slave (level, s2_id, time, osm_id, json, is_cut) VALUES (?, ?, ?, ?, ?, ?)'''
 PREPARED_INSERT = SESSION.prepare(PS_INSERT)
 
 
@@ -26,13 +27,13 @@ def to_64bit(number):
     return ctypes.c_long(number).value
 
 
-def insert_by_covering(cellid, feature):
+def insert_by_covering(cellid, feature, is_cut):
     '''Given the covering region, store the given feature into the database'''
     osm_id = feature['id']
     s2_id = to_64bit(cellid.id())
     feature_str = geojson.dumps(feature)
     insert_by_covering.handle = SESSION.execute_async(
-        PREPARED_INSERT, (cellid.level(), s2_id, HIGHEST_TIME_UUID, osm_id, feature_str))
+        PREPARED_INSERT, (cellid.level(), s2_id, HIGHEST_TIME_UUID, osm_id, feature_str, is_cut))
 
 
 def insert_by_bboxes(bboxes, feature):
@@ -41,13 +42,13 @@ def insert_by_bboxes(bboxes, feature):
     for bbox in bboxes:
         coverings = geohelper.get_covering(bbox)
         for covering in coverings:
-            insert_by_covering(covering, feature)
+            insert_by_covering(covering, feature, False)
 
 
 def insert_by_cut_feature(cut_feature_set):
     '''Given the cut feature dictionary, insert pieces to the corresponding place'''
     for cellid, feature in cut_feature_set.iteritems():
-        insert_by_covering(S2CellId(cellid), feature)
+        insert_by_covering(S2CellId(cellid), feature, True)
 
 
 def __initialize():

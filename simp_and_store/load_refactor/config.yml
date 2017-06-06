@@ -21,4 +21,4 @@ dbhelper:
 
 main:
   duplication method: true
-  cutting method: true
+  cutting method: false

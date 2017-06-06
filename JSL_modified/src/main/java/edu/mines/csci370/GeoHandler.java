@@ -146,6 +146,9 @@ public class GeoHandler implements GeolocationService.Iface {
                 Feature feature = featureMap.get(level).get(i);
                 String osmId = osmIdMap.get(level).get(i);
                 System.out.println(osmId);
+                if (osmId.equals("way/33113233")){
+                    System.out.println(feature.json);
+                }
                 if (!holder.containsKey(osmId)) {
                     holder.put(osmId, new ArrayList<>());
                 }
@@ -154,26 +157,26 @@ public class GeoHandler implements GeolocationService.Iface {
         }
         /* Good above this line */
 
-//        List<Feature> result = new ArrayList<>();
-//        for (String osm_id : holder.keySet()) {
-//            Feature largest_feature = null;
-//            for (Feature feature : holder.get(osm_id)) {
-//                if (largest_feature == null) largest_feature = feature;
-//                else {
-//                    long size_of_large = largest_feature.json.length();
-//                    long size_of_current = feature.json.length();
-//                    if (size_of_current > size_of_large) largest_feature = feature;
-//                }
-//            }
-//            result.add(largest_feature);
-//        }
-
-        List<List<Feature>> temp = new ArrayList<List<Feature>>(holder.values());
         List<Feature> result = new ArrayList<>();
-
-        for (List<Feature> features: temp){
-            result.addAll(features);
+        for (String osm_id : holder.keySet()) {
+            Feature largest_feature = null;
+            for (Feature feature : holder.get(osm_id)) {
+                if (largest_feature == null) largest_feature = feature;
+                else {
+                    long size_of_large = largest_feature.json.length();
+                    long size_of_current = feature.json.length();
+                    if (size_of_current > size_of_large) largest_feature = feature;
+                }
+            }
+            result.add(largest_feature);
         }
+
+//        List<List<Feature>> temp = new ArrayList<List<Feature>>(holder.values());
+//        List<Feature> result = new ArrayList<>();
+//
+//        for (List<Feature> features: temp){
+//            result.addAll(features);
+//        }
 
         return result;
     }
