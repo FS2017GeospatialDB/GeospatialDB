@@ -59,11 +59,20 @@ vector<S2CellId> *OUTPUT {
 
 %include "std_vector.i"
 %template(S2PointVector) std::vector<S2Point>;
-//%template(S2LoopVector) std::vector<S2Loop>;
 %template(VectorDouble) std::vector<double>;
 
-//%template(Vector2_i) Vector2<int>;
-//%template(Vector2_d) Vector2<double>;
+// Fixes S2CellId::GetCenterUV() and S2CellId::GetCenterST()
+template<class T1>
+struct Vector2 {
+  T1 x();
+  T1 y();
+};
+%template(Vector2D) Vector2<double>;
+
+// Fixes S2CellId::GetEdgeNeighbors()
+%{
+  extern void S2CellId_GetEdgeNeighbors(S2CellId[4] OUTPUT);
+%}
 
 #endif
 
