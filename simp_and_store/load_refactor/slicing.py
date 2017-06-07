@@ -30,7 +30,7 @@ def slice_feature(json, level):
             feature_set = slicePolygon(json, level)
         elif geo_type == 'MultiPolygon':
         	feature_set = sliceMultiPolygon(json, level)
-    except NotImplementedError,e:
+    except (NotImplementedError, IndexError),e:
     	# Who needs execption handling?
     	if DEBUG_PRINT: print ">>> NotImplementedError: %s" % e
     return feature_set
