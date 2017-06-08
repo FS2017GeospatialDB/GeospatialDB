@@ -21,4 +21,10 @@ service GeolocationService {
 	list<Feature> getFeatures(1:double lBox, 2:double rBox, 3:double bBox, 4:double tBox, 5:i64 timestamp);
 
 	list<Feature> getCell(1:double lat, 2:double lng, 3:i64 timestamp);
+
+	/**
+	 * Feature modification calls, return id or failure code
+	 */
+	i32 deleteFeature(1:i32 id);
+	i32 updateFeature(1:i32 id, 2:string feature);
 }

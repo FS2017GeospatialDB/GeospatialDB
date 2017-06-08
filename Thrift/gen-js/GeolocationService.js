@@ -355,6 +355,231 @@ GeolocationService_getCell_result.prototype.write = function(output) {
   return;
 };
 
+GeolocationService_deleteFeature_args = function(args) {
+  this.id = null;
+  if (args) {
+    if (args.id !== undefined && args.id !== null) {
+      this.id = args.id;
+    }
+  }
+};
+GeolocationService_deleteFeature_args.prototype = {};
+GeolocationService_deleteFeature_args.prototype.read = function(input) {
+  input.readStructBegin();
+  while (true)
+  {
+    var ret = input.readFieldBegin();
+    var fname = ret.fname;
+    var ftype = ret.ftype;
+    var fid = ret.fid;
+    if (ftype == Thrift.Type.STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+      if (ftype == Thrift.Type.I32) {
+        this.id = input.readI32().value;
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 0:
+        input.skip(ftype);
+        break;
+      default:
+        input.skip(ftype);
+    }
+    input.readFieldEnd();
+  }
+  input.readStructEnd();
+  return;
+};
+
+GeolocationService_deleteFeature_args.prototype.write = function(output) {
+  output.writeStructBegin('GeolocationService_deleteFeature_args');
+  if (this.id !== null && this.id !== undefined) {
+    output.writeFieldBegin('id', Thrift.Type.I32, 1);
+    output.writeI32(this.id);
+    output.writeFieldEnd();
+  }
+  output.writeFieldStop();
+  output.writeStructEnd();
+  return;
+};
+
+GeolocationService_deleteFeature_result = function(args) {
+  this.success = null;
+  if (args) {
+    if (args.success !== undefined && args.success !== null) {
+      this.success = args.success;
+    }
+  }
+};
+GeolocationService_deleteFeature_result.prototype = {};
+GeolocationService_deleteFeature_result.prototype.read = function(input) {
+  input.readStructBegin();
+  while (true)
+  {
+    var ret = input.readFieldBegin();
+    var fname = ret.fname;
+    var ftype = ret.ftype;
+    var fid = ret.fid;
+    if (ftype == Thrift.Type.STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 0:
+      if (ftype == Thrift.Type.I32) {
+        this.success = input.readI32().value;
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 0:
+        input.skip(ftype);
+        break;
+      default:
+        input.skip(ftype);
+    }
+    input.readFieldEnd();
+  }
+  input.readStructEnd();
+  return;
+};
+
+GeolocationService_deleteFeature_result.prototype.write = function(output) {
+  output.writeStructBegin('GeolocationService_deleteFeature_result');
+  if (this.success !== null && this.success !== undefined) {
+    output.writeFieldBegin('success', Thrift.Type.I32, 0);
+    output.writeI32(this.success);
+    output.writeFieldEnd();
+  }
+  output.writeFieldStop();
+  output.writeStructEnd();
+  return;
+};
+
+GeolocationService_updateFeature_args = function(args) {
+  this.id = null;
+  this.feature = null;
+  if (args) {
+    if (args.id !== undefined && args.id !== null) {
+      this.id = args.id;
+    }
+    if (args.feature !== undefined && args.feature !== null) {
+      this.feature = args.feature;
+    }
+  }
+};
+GeolocationService_updateFeature_args.prototype = {};
+GeolocationService_updateFeature_args.prototype.read = function(input) {
+  input.readStructBegin();
+  while (true)
+  {
+    var ret = input.readFieldBegin();
+    var fname = ret.fname;
+    var ftype = ret.ftype;
+    var fid = ret.fid;
+    if (ftype == Thrift.Type.STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+      if (ftype == Thrift.Type.I32) {
+        this.id = input.readI32().value;
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 2:
+      if (ftype == Thrift.Type.STRING) {
+        this.feature = input.readString().value;
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      default:
+        input.skip(ftype);
+    }
+    input.readFieldEnd();
+  }
+  input.readStructEnd();
+  return;
+};
+
+GeolocationService_updateFeature_args.prototype.write = function(output) {
+  output.writeStructBegin('GeolocationService_updateFeature_args');
+  if (this.id !== null && this.id !== undefined) {
+    output.writeFieldBegin('id', Thrift.Type.I32, 1);
+    output.writeI32(this.id);
+    output.writeFieldEnd();
+  }
+  if (this.feature !== null && this.feature !== undefined) {
+    output.writeFieldBegin('feature', Thrift.Type.STRING, 2);
+    output.writeString(this.feature);
+    output.writeFieldEnd();
+  }
+  output.writeFieldStop();
+  output.writeStructEnd();
+  return;
+};
+
+GeolocationService_updateFeature_result = function(args) {
+  this.success = null;
+  if (args) {
+    if (args.success !== undefined && args.success !== null) {
+      this.success = args.success;
+    }
+  }
+};
+GeolocationService_updateFeature_result.prototype = {};
+GeolocationService_updateFeature_result.prototype.read = function(input) {
+  input.readStructBegin();
+  while (true)
+  {
+    var ret = input.readFieldBegin();
+    var fname = ret.fname;
+    var ftype = ret.ftype;
+    var fid = ret.fid;
+    if (ftype == Thrift.Type.STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 0:
+      if (ftype == Thrift.Type.I32) {
+        this.success = input.readI32().value;
+      } else {
+        input.skip(ftype);
+      }
+      break;
+      case 0:
+        input.skip(ftype);
+        break;
+      default:
+        input.skip(ftype);
+    }
+    input.readFieldEnd();
+  }
+  input.readStructEnd();
+  return;
+};
+
+GeolocationService_updateFeature_result.prototype.write = function(output) {
+  output.writeStructBegin('GeolocationService_updateFeature_result');
+  if (this.success !== null && this.success !== undefined) {
+    output.writeFieldBegin('success', Thrift.Type.I32, 0);
+    output.writeI32(this.success);
+    output.writeFieldEnd();
+  }
+  output.writeFieldStop();
+  output.writeStructEnd();
+  return;
+};
+
 GeolocationServiceClient = function(input, output) {
     this.input = input;
     this.output = (!output) ? input : output;
@@ -464,4 +689,103 @@ GeolocationServiceClient.prototype.recv_getCell = function() {
     return result.success;
   }
   throw 'getCell failed: unknown result';
+};
+GeolocationServiceClient.prototype.deleteFeature = function(id, callback) {
+  this.send_deleteFeature(id, callback); 
+  if (!callback) {
+    return this.recv_deleteFeature();
+  }
+};
+
+GeolocationServiceClient.prototype.send_deleteFeature = function(id, callback) {
+  this.output.writeMessageBegin('deleteFeature', Thrift.MessageType.CALL, this.seqid);
+  var args = new GeolocationService_deleteFeature_args();
+  args.id = id;
+  args.write(this.output);
+  this.output.writeMessageEnd();
+  if (callback) {
+    var self = this;
+    this.output.getTransport().flush(true, function() {
+      var result = null;
+      try {
+        result = self.recv_deleteFeature();
+      } catch (e) {
+        result = e;
+      }
+      callback(result);
+    });
+  } else {
+    return this.output.getTransport().flush();
+  }
+};
+
+GeolocationServiceClient.prototype.recv_deleteFeature = function() {
+  var ret = this.input.readMessageBegin();
+  var fname = ret.fname;
+  var mtype = ret.mtype;
+  var rseqid = ret.rseqid;
+  if (mtype == Thrift.MessageType.EXCEPTION) {
+    var x = new Thrift.TApplicationException();
+    x.read(this.input);
+    this.input.readMessageEnd();
+    throw x;
+  }
+  var result = new GeolocationService_deleteFeature_result();
+  result.read(this.input);
+  this.input.readMessageEnd();
+
+  if (null !== result.success) {
+    return result.success;
+  }
+  throw 'deleteFeature failed: unknown result';
+};
+GeolocationServiceClient.prototype.updateFeature = function(id, feature, callback) {
+  this.send_updateFeature(id, feature, callback); 
+  if (!callback) {
+    return this.recv_updateFeature();
+  }
+};
+
+GeolocationServiceClient.prototype.send_updateFeature = function(id, feature, callback) {
+  this.output.writeMessageBegin('updateFeature', Thrift.MessageType.CALL, this.seqid);
+  var args = new GeolocationService_updateFeature_args();
+  args.id = id;
+  args.feature = feature;
+  args.write(this.output);
+  this.output.writeMessageEnd();
+  if (callback) {
+    var self = this;
+    this.output.getTransport().flush(true, function() {
+      var result = null;
+      try {
+        result = self.recv_updateFeature();
+      } catch (e) {
+        result = e;
+      }
+      callback(result);
+    });
+  } else {
+    return this.output.getTransport().flush();
+  }
+};
+
+GeolocationServiceClient.prototype.recv_updateFeature = function() {
+  var ret = this.input.readMessageBegin();
+  var fname = ret.fname;
+  var mtype = ret.mtype;
+  var rseqid = ret.rseqid;
+  if (mtype == Thrift.MessageType.EXCEPTION) {
+    var x = new Thrift.TApplicationException();
+    x.read(this.input);
+    this.input.readMessageEnd();
+    throw x;
+  }
+  var result = new GeolocationService_updateFeature_result();
+  result.read(this.input);
+  this.input.readMessageEnd();
+
+  if (null !== result.success) {
+    return result.success;
+  }
+  throw 'updateFeature failed: unknown result';
 };
