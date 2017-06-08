@@ -3,6 +3,7 @@ import numpy
 import geojson
 import s2sphere
 import geohelper
+import traceback
 
 from copy import deepcopy
 
@@ -14,26 +15,28 @@ toTop = {0:2, 1:2, 2:3, 3:2, 4:2, 5:0}
 toBottom = {0:5, 1:5, 2:0, 3:5, 4:5, 5:3}
 
 def slice_feature(json, level):
-    '''Given the raw_feature and the desired level, cutting the feature.
-    Note: This function is not fully implemented
-    The result will be {CellId (long): json}, where cellid is the region
-    that feature belongs to, json is the cutted geojson feature'''
-    feature_set = dict()
-    geo_type = geohelper.get_type(json)
-    # no need to slice points, as duplicate method already stores original data
-    try:
-        if geo_type == 'MultiPoint':
-            feature_set = sliceMultiPoint(json, level)
-        elif geo_type == 'LineString':
-            feature_set = sliceLineString(json, level)
-        elif geo_type == 'Polygon':
-            feature_set = slicePolygon(json, level)
-        elif geo_type == 'MultiPolygon':
-        	feature_set = sliceMultiPolygon(json, level)
-    except NotImplementedError,e:
-    	# Who needs execption handling?
-    	if DEBUG_PRINT: print ">>> NotImplementedError: %s" % e
-    return feature_set
+	'''Given the raw_feature and the desired level, cutting the feature.
+	Note: This function is not fully implemented
+	The result will be {CellId (long): json}, where cellid is the region
+	that feature belongs to, json is the cutted geojson feature'''
+	feature_set = dict()
+	geo_type = geohelper.get_type(json)
+	# no need to slice points, as duplicate method already stores original data
+	try:
+		if geo_type == 'MultiPoint':
+			feature_set = sliceMultiPoint(json, level)
+		elif geo_type == 'LineString':
+			feature_set = sliceLineString(json, level)
+		elif geo_type == 'Polygon':
+			feature_set = slicePolygon(json, level)
+		elif geo_type == 'MultiPolygon':
+			feature_set = sliceMultiPolygon(json, level)
+	except (IndexError),e:
+		print ">>> IndexError %s" % e
+		print traceback.format_exc()
+	except (NotImplementedError),e:
+		print ">>> NotImplementedError: %s" % e
+	return feature_set
 
 def slicePoint(pointJson, level):
 	pointJson = deepcopy(pointJson)
@@ -150,13 +153,13 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 				if DEBUG_PRINT:
 					if decision == rightT:
 						print "Right!\t",
-				 	elif decision == leftT:
+					elif decision == leftT:
 						print "Left!\t",
-				 	elif decision == upT:
+					elif decision == upT:
 						print "Up!\t",
-				 	elif decision == downT:
+					elif decision == downT:
 						print "Down!\t",
-				 	print lastCell.id(), nextCell.id()			
+					print lastCell.id(), nextCell.id()			
 				
 				"""
 				print leftT, rightT, upT, downT
@@ -212,8 +215,8 @@ def sliceMultiLineString(multiLineStringJson, level):
 	return result
 
 # Untested
-def slicePolygon(polygonJson, level):
-	polygonJson = deepcopy(polygonJson)
+def slicePolygon(polygonJsonParam, level):
+	polygonJson = deepcopy(polygonJsonParam)
 	lines = polygonJson['geometry']['coordinates']
 	polygonJson['geometry']['coordinates'] = [[]]
 	lineStringJson = deepcopy(polygonJson)
@@ -221,7 +224,7 @@ def slicePolygon(polygonJson, level):
 
 	if len(lines) > 1:
 		raise NotImplementedError("Polygons with holes are not yet implemented.")
-
+	
 	result = {}
 	for line in lines:
 		clockwise = isClockwise(line)
