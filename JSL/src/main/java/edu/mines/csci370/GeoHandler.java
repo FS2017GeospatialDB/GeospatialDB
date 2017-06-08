@@ -1,6 +1,7 @@
 package edu.mines.csci370;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -96,7 +97,7 @@ public class GeoHandler implements GeolocationService.Iface {
     for (String osmId : pieces.keySet()) {
       Map<Long, JSONObject> list = pieces.get(osmId);
 
-      JSONObject unified = reconstruct(list);
+      JSONObject unified = reconstruct(list, lBox, rBox, bBox, tBox);
       if (unified != null) {
         results.add(new Feature(
           timestamps.get(osmId),
@@ -141,7 +142,9 @@ public class GeoHandler implements GeolocationService.Iface {
     return results;
   }
 
-  private JSONObject reconstruct(Map<Long, JSONObject> s2CellToJson) {
+  private JSONObject reconstruct(Map<Long, JSONObject> s2CellToJson, double lBox, double rBox, double bBox, double tBox) {
+    System.out.println("Reconstructing " + s2CellToJson);
+
     // Simple Case == Already Reconstructed
     if (s2CellToJson.size() == 1)
       for (Long key : s2CellToJson.keySet())
@@ -156,7 +159,7 @@ public class GeoHandler implements GeolocationService.Iface {
     else if (type.equals("LineString") || type.equals("MultiLineString"))
       return reconstructMultiLineString(s2CellToJson);
     else if (type.equals("Polygon") || type.equals("MultiPolygon"))
-      return reconstructMultiPolygon(s2CellToJson);
+      return reconstructMultiPolygon(s2CellToJson, lBox, rBox, bBox, tBox);
     else return null;
   }
 
@@ -219,8 +222,13 @@ public class GeoHandler implements GeolocationService.Iface {
       for (int i = 0; i < lineSegment.size(); i++) {
         lineComplete.add(lineSegment.get(i));
 
-        // Replace Scalia
-        if (i == lineSegment.size() - 1 && ((JSONArray) lineSegment.get(i)).size() == 3) {
+        // End of the Line
+        if (i == lineSegment.size() - 1 && ((JSONArray) lineSegment.get(i)).size() != 3) {
+          seed = null; lineSegment = null; break;
+        }
+
+        // Replace Scalia (leaving s2 cell...)
+        if (i > 0 && ((JSONArray) lineSegment.get(i)).size() == 3) {
           String code = (String) ((JSONArray) lineSegment.get(i)).get(2);
           char direction = code.charAt(2);
           assert(code.startsWith("EL"));
@@ -230,11 +238,22 @@ public class GeoHandler implements GeolocationService.Iface {
           (new S2CellId(seed)).getEdgeNeighbors(neighbors);
           Long nextCell = (direction == 'D' ? neighbors[0].id() : (direction == 'R' ? neighbors[1].id() : (direction == 'U' ? neighbors[2].id() : neighbors[3].id())));
 
+          // Add Remainder of lineSegment as New Line Segment to be searched
+          if (i + 1 < lineSegment.size()) {
+            code = (String) ((JSONArray) lineSegment.get(i+1)).get(2);
+            assert(code.startsWith("EE"));
+            if (!lines.containsKey(seed)) lines.put(seed, new JSONArray());
+            JSONArray split = new JSONArray();
+            for (int k = i+1; k < lineSegment.size(); k++) split.add(lineSegment.get(k));
+            lines.get(seed).add(split);
+          }
+
           // Check if Continuation is Unsearched
           if (lines.containsKey(nextCell)) {
             for (JSONArray tmpSegment : lines.get(nextCell)) {
               if ((double) ((JSONArray) tmpSegment.get(0)).get(0) == (double) ((JSONArray) lineSegment.get(i)).get(0)
                     && (double) ((JSONArray) tmpSegment.get(0)).get(1) == (double) ((JSONArray) lineSegment.get(i)).get(1))
+                System.out.println("Perfect Continuation: " + nextCell);
                 seed = nextCell; lineSegment = tmpSegment;
             }
             if (seed == nextCell) break;
@@ -245,11 +264,13 @@ public class GeoHandler implements GeolocationService.Iface {
             for (JSONArray tmpSegment : processed.get(nextCell)) {
               if ((double) ((JSONArray) tmpSegment.get(0)).get(0) == (double) ((JSONArray) lineSegment.get(i)).get(0)
                     && (double) ((JSONArray) tmpSegment.get(0)).get(1) == (double) ((JSONArray) lineSegment.get(i)).get(1)) {
+                System.out.println("Continuation Found, But Processed: " + nextCell);
 
                 // Search for Existing lineComplete
                 for (JSONArray tmpLineComplete : results) {
                   if ((double) ((JSONArray) tmpLineComplete.get(0)).get(0) == (double) ((JSONArray) lineSegment.get(i)).get(0)
                       && (double) ((JSONArray) tmpLineComplete.get(0)).get(1) == (double) ((JSONArray) lineSegment.get(i)).get(1)) {
+                    System.out.println("Prepending to Existing Segment: " + nextCell);
                     tmpLineComplete.addAll(0, lineSegment);
                     seed = null; lineSegment = null;
                     break;
@@ -262,6 +283,7 @@ public class GeoHandler implements GeolocationService.Iface {
 
           // We Fell off the Map (or already merged)
           seed = null; lineSegment = null;
+          break;
         }
       }
     }
@@ -270,14 +292,14 @@ public class GeoHandler implements GeolocationService.Iface {
     for (JSONArray lineCompleted : results) {
       for (int i = 1; i < lineCompleted.size() - 1; i++) {
         JSONArray point = (JSONArray) lineCompleted.get(i);
-        if (point.size() > 2)
-          point = (JSONArray) point.subList(0, 2);
+        while (point.size() > 2) point.remove(point.size() - 1);
       }
     }
 
     // Return the Results
     Long finishedSeed = s2CellToJson.keySet().iterator().next();
-    ArrayList coordinates = new ArrayList();
+    JSONArray coordinates = new JSONArray();
+
     for (ArrayList finishedLineSegment : results)
       coordinates.add(finishedLineSegment);
     if (coordinates.size() == 1) coordinates = (JSONArray) coordinates.get(0);
@@ -286,12 +308,129 @@ public class GeoHandler implements GeolocationService.Iface {
     return s2CellToJson.get(finishedSeed);
   }
 
-  private JSONObject reconstructMultiPolygon(Map<Long, JSONObject> s2CellToJson) {
-    // Condense MultiPolygon->MultiLineString, Polygon->LineString
-    // Call reconstructMutliLine()
-    // Process output by closing each polygon and wrapping corners Clockwise
-    // Return Polygon/MultiPolygon object
+  private JSONObject reconstructMultiPolygon(Map<Long, JSONObject> s2CellToJson, double lBox, double rBox, double bBox, double tBox) {
+    // Downgrade MultiPolygon->MultiLineString and Polygon->LineString
+    for (Long key : s2CellToJson.keySet()) {
+      String type = (String) ((JSONObject) ((JSONObject) s2CellToJson.get(key)).get("geometry")).get("type");
+      JSONArray coordinates = (JSONArray) ((JSONObject) ((JSONObject) s2CellToJson.get(key)).get("geometry")).get("coordinates");
 
+      if (type.equals("Polygon")) {
+        // Polygons w/ Holes are not Supported!!!
+        assert(coordinates.size() == 1);
+
+        // Unwind the Polygon
+        ((JSONArray) coordinates.get(0)).remove(((JSONArray) coordinates.get(0)).size() - 1);
+
+        // Remove Corners
+        for (int i = 0; i < ((JSONArray) coordinates.get(0)).size(); i++) {
+          JSONArray point = (JSONArray) ((JSONArray) coordinates.get(0)).get(i);
+          if (point.size() == 3 && ((String) point.get(2)).startsWith("C")) {
+            ((JSONArray) coordinates.get(0)).remove(i); i--;
+          }
+        }
+        if (((JSONArray) coordinates.get(0)).size() == 0) continue;
+
+        // Convert to LineString
+        ((JSONObject) ((JSONObject) s2CellToJson.get(key)).get("geometry")).put("coordinates", coordinates.get(0));
+        ((JSONObject) ((JSONObject) s2CellToJson.get(key)).get("geometry")).put("type", "LineString");
+      } else {
+        for (int i = 0; i < coordinates.size(); i++) {
+          // Polygons w/ Holes are not Supported!!
+          assert(((JSONArray) coordinates.get(i)).size() == 1);
+
+          // Unwind the Polygon
+          ((JSONArray) ((JSONArray) coordinates.get(i)).get(0)).remove(((JSONArray) ((JSONArray) coordinates.get(i)).get(0)).size() - 1);
+
+          // Remove Corners
+          for (int j = 0; j < ((JSONArray) ((JSONArray) coordinates.get(i)).get(0)).size(); j++) {
+            JSONArray point = (JSONArray) ((JSONArray) ((JSONArray) coordinates.get(i)).get(0)).get(j);
+            if (point.size() == 3 && ((String) point.get(2)).startsWith("C")) {
+              ((JSONArray) ((JSONArray) coordinates.get(i)).get(0)).remove(j); j--;
+            }
+          }
+
+          // Convert to MultiLineString
+          coordinates.set(i, ((JSONArray) coordinates.get(i)).get(0));
+        }
+        ((JSONObject) ((JSONObject) s2CellToJson.get(key)).get("geometry")).put("type", "MultiLineString");
+      }
+    }
+
+    // Perform Reconstruction
+    JSONObject multiLine = reconstructMultiLineString(s2CellToJson);
+
+    // Close Polygon w/ Corner Wrapping
+    JSONArray lines = (JSONArray) ((JSONObject) multiLine.get("geometry")).get("coordinates");
+    for (int i = 0; i < lines.size(); i++) {
+      JSONArray firstPoint = (JSONArray) ((JSONArray) lines.get(i)).get(0);
+      JSONArray lastPoint = (JSONArray) ((JSONArray) lines.get(i)).get(((JSONArray) lines.get(i)).size() - 1);
+
+      if (firstPoint.size() == 3 && lastPoint.size() == 3) {
+        JSONArray newPoints = wrapCorner(true, ((String) firstPoint.get(2)).charAt(2), ((String) lastPoint.get(2)).charAt(2), lBox, rBox, bBox, tBox);
+        if (newPoints != null) ((JSONArray) lines.get(i)).addAll(newPoints);
+      }
+
+      if (firstPoint.get(0) != lastPoint.get(0) || firstPoint.get(1) != lastPoint.get(1))
+        ((JSONArray) lines.get(i)).add(lastPoint);
+    }
+
+    // Return the Results
+    ((JSONObject) multiLine.get("geometry")).put("type", lines.size() > 1 ? "MultiPolygon" : "Polygon");    
+    return multiLine;
+  }
+
+  private JSONArray wrapCorner(boolean clockwise, char startCode, char endCode, double lBox, double rBox, double bBox, double tBox) {
+    // Check if Work Has to be Done
+    startCode = Character.toUpperCase(startCode);
+    endCode = Character.toUpperCase(endCode);
+    if (startCode == endCode) return null;
+
+    // Define Variables
+    List<Character> sides = new ArrayList<Character>(Arrays.asList('U','R','D','L'));
+    int delta = clockwise ? 1 : -1;
+    S2LatLng latlng = S2LatLng.fromDegrees((tBox + bBox) / 2.0, (lBox + rBox) / 2.0);
+    int face = S2CellId.fromLatLng(latlng).face();
+
+    // Loop Until Connected
+    int start = sides.indexOf(startCode);
+    int end = sides.indexOf(endCode);
+    JSONArray result = new JSONArray();
+    while (start != end) {
+      char currentEdge = sides.get(start);
+      char nextEdge = sides.get((start + delta) % 4);
+
+      // TODO: Add Rotations According to S-T Axes
+      if (face <= 2) latlng = getCornerLatLong(currentEdge, nextEdge, lBox, rBox, bBox, tBox);
+      else latlng = getCornerLatLong(sides.get((start+1)%4), sides.get((start+delta+1)%4), lBox, rBox, bBox, tBox);
+
+      JSONArray corner = new JSONArray();
+      corner.add(latlng.lngDegrees()); corner.add(latlng.latDegrees()); corner.add('C' + currentEdge + nextEdge);
+      result.add(corner);
+
+      start = (start + delta) % 4;
+    }
+
+    // Return results
+    return result;
+  }
+
+  private S2LatLng getCornerLatLong(char startSide, char endSide, double lBox, double rBox, double bBox, double tBox) {
+    if ((startSide == 'U' || startSide == 'R') && (endSide == 'U' || endSide == 'R'))
+      return S2LatLng.fromDegrees(tBox, rBox);
+    else if ((startSide == 'R' || startSide == 'D') && (endSide == 'R' || endSide == 'D'))
+      return S2LatLng.fromDegrees(bBox, rBox);
+    else if ((startSide == 'D' || startSide == 'L') && (endSide == 'D' || endSide == 'L'))
+      return S2LatLng.fromDegrees(bBox, lBox);
+    else if ((startSide == 'L' || startSide == 'U') && (endSide == 'L' || endSide == 'U'))
+      return S2LatLng.fromDegrees(tBox, lBox);
     return null;
   }
 }
+
+/**
+  * Face:  0  1  2  3  4  5
+  *   UR: UR UR ?? BR BR ??
+  *   RD: RD RD ?? BL BL ??
+  *   DL: DL DL ?? TL TL ??
+  *   LU: LU LU ?? UR UR ??
+  */
