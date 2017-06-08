@@ -187,15 +187,12 @@ def sliceMultiLineString(multiLineStringJson, level):
 	return result
 
 # Untested
-def slicePolygon(polygonJson, level):
-	polygonJson = deepcopy(polygonJson)
+def slicePolygon(polygonJsonParam, level):
+	polygonJson = deepcopy(polygonJsonParam)
 	lines = polygonJson['geometry']['coordinates']
-	polygonJson['geometry']['coordinates'] = [[]]
+	polygonJson['geometry']['coordinates'] = []
 	lineStringJson = deepcopy(polygonJson)
 	lineStringJson['geometry']['type'] = 'LineString'
-
-	if len(lines) > 1:
-		raise NotImplementedError("Polygons with holes are not yet implemented.")
 
 	result = {}
 	for line in lines:
@@ -206,31 +203,30 @@ def slicePolygon(polygonJson, level):
 		for location in lineLocations.keys():
 			if not location in result.keys():
 				result[location] = deepcopy(polygonJson)
-			result[location]['geometry']['coordinates'][0].extend(lineLocations[location]['geometry']['coordinates'])
+			result[location]['geometry']['coordinates'].append([])
+			result[location]['geometry']['coordinates'][-1].extend(lineLocations[location]['geometry']['coordinates'])
 
 	for location in result:
-		"""
-		for pointNum,point in enumerate(result[location]['geometry']['coordinates'][0]):
-			if len(point) == 3:
+		for lineNum, line in enumerate(result[location]['geometry']['coordinates']):
+			for pointNum,point in enumerate(line):
+				if len(point) == 3:
 
-				# Entering Polygon, Round the Corner
-				if point[2][1] == 'E' and pointNum != 0:
-					print result[location]['geometry']['coordinates'][0][pointNum-1][2], result[location]['geometry']['coordinates'][0][pointNum][2]
-					newPoints = wrapCorner(location, clockwise, result[location]['geometry']['coordinates'][0][pointNum-1][2], result[location]['geometry']['coordinates'][0][pointNum][2])
-					if newPoints != None:
-						result[location]['geometry']['coordinates'][0][pointNum:pointNum] = newPoints
+					# Entering Polygon, Round the Corner
+					if point[2][1] == 'E' and pointNum != 0:
+						newPoints = wrapCorner(location, clockwise, line[pointNum-1][2], line[pointNum][2])
+						if newPoints != None:
+							line[pointNum:pointNum] = newPoints
 
-				# Leaving the Polygon, Nothing to See Here
-				elif point[2][1] == 'L':
-					pass
-		"""
+					# Leaving the Polygon, Nothing to See Here
+					elif point[2][1] == 'L':
+						pass
 
-		# Check if result[location] is not closed
-		if result[location]['geometry']['coordinates'][0][0] != result[location]['geometry']['coordinates'][0][-1]:
-			newPoints = wrapCorner(location, clockwise, result[location]['geometry']['coordinates'][0][-1][2], result[location]['geometry']['coordinates'][0][0][2])
-			if newPoints != None:
-				result[location]['geometry']['coordinates'][0].extend(newPoints)
-			result[location]['geometry']['coordinates'][0].append(result[location]['geometry']['coordinates'][0][0])		
+			# Check if result[location] is not closed
+			if line[0] != line[-1]:
+				newPoints = wrapCorner(location, clockwise, line[-1][2], line[0][2])
+				if newPoints != None:
+					line.extend(newPoints)
+				line.append(line[0])
 
 	# Search for enclosed cells not listed here that need to be added
 	"""
