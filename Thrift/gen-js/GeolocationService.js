@@ -378,8 +378,8 @@ GeolocationService_deleteFeature_args.prototype.read = function(input) {
     switch (fid)
     {
       case 1:
-      if (ftype == Thrift.Type.I32) {
-        this.id = input.readI32().value;
+      if (ftype == Thrift.Type.STRING) {
+        this.id = input.readString().value;
       } else {
         input.skip(ftype);
       }
@@ -399,8 +399,8 @@ GeolocationService_deleteFeature_args.prototype.read = function(input) {
 GeolocationService_deleteFeature_args.prototype.write = function(output) {
   output.writeStructBegin('GeolocationService_deleteFeature_args');
   if (this.id !== null && this.id !== undefined) {
-    output.writeFieldBegin('id', Thrift.Type.I32, 1);
-    output.writeI32(this.id);
+    output.writeFieldBegin('id', Thrift.Type.STRING, 1);
+    output.writeString(this.id);
     output.writeFieldEnd();
   }
   output.writeFieldStop();
@@ -431,8 +431,8 @@ GeolocationService_deleteFeature_result.prototype.read = function(input) {
     switch (fid)
     {
       case 0:
-      if (ftype == Thrift.Type.I32) {
-        this.success = input.readI32().value;
+      if (ftype == Thrift.Type.STRING) {
+        this.success = input.readString().value;
       } else {
         input.skip(ftype);
       }
@@ -452,8 +452,8 @@ GeolocationService_deleteFeature_result.prototype.read = function(input) {
 GeolocationService_deleteFeature_result.prototype.write = function(output) {
   output.writeStructBegin('GeolocationService_deleteFeature_result');
   if (this.success !== null && this.success !== undefined) {
-    output.writeFieldBegin('success', Thrift.Type.I32, 0);
-    output.writeI32(this.success);
+    output.writeFieldBegin('success', Thrift.Type.STRING, 0);
+    output.writeString(this.success);
     output.writeFieldEnd();
   }
   output.writeFieldStop();
@@ -488,8 +488,8 @@ GeolocationService_updateFeature_args.prototype.read = function(input) {
     switch (fid)
     {
       case 1:
-      if (ftype == Thrift.Type.I32) {
-        this.id = input.readI32().value;
+      if (ftype == Thrift.Type.STRING) {
+        this.id = input.readString().value;
       } else {
         input.skip(ftype);
       }
@@ -513,8 +513,8 @@ GeolocationService_updateFeature_args.prototype.read = function(input) {
 GeolocationService_updateFeature_args.prototype.write = function(output) {
   output.writeStructBegin('GeolocationService_updateFeature_args');
   if (this.id !== null && this.id !== undefined) {
-    output.writeFieldBegin('id', Thrift.Type.I32, 1);
-    output.writeI32(this.id);
+    output.writeFieldBegin('id', Thrift.Type.STRING, 1);
+    output.writeString(this.id);
     output.writeFieldEnd();
   }
   if (this.feature !== null && this.feature !== undefined) {
@@ -550,8 +550,8 @@ GeolocationService_updateFeature_result.prototype.read = function(input) {
     switch (fid)
     {
       case 0:
-      if (ftype == Thrift.Type.I32) {
-        this.success = input.readI32().value;
+      if (ftype == Thrift.Type.STRING) {
+        this.success = input.readString().value;
       } else {
         input.skip(ftype);
       }
@@ -571,8 +571,8 @@ GeolocationService_updateFeature_result.prototype.read = function(input) {
 GeolocationService_updateFeature_result.prototype.write = function(output) {
   output.writeStructBegin('GeolocationService_updateFeature_result');
   if (this.success !== null && this.success !== undefined) {
-    output.writeFieldBegin('success', Thrift.Type.I32, 0);
-    output.writeI32(this.success);
+    output.writeFieldBegin('success', Thrift.Type.STRING, 0);
+    output.writeString(this.success);
     output.writeFieldEnd();
   }
   output.writeFieldStop();

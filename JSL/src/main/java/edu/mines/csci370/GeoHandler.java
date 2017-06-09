@@ -123,10 +123,6 @@ public class GeoHandler implements GeolocationService.Iface {
     PreparedStatement statement = Database.prepareFromCache(
       "SELECT unixTimestampOf(time) AS time_unix, json FROM global.slave WHERE level=? AND s2_id=? AND time >= ?");
 
-    // Historical Query info
-    // System.out.println(timestampMillis);
-    // mintimeuuid: YYYY-MM-DD hh:mm+____
-
     // Execute the Query
     ResultSet rs = session.execute(statement.bind(cell.level(), cell.id(), UUIDs.startOf(timestampMillis)));
 
@@ -142,6 +138,33 @@ public class GeoHandler implements GeolocationService.Iface {
     System.out.println("1 query @ scale=" + cell.level() + " in " + (finish - start) + "ms");
     return results;
   }
+
+  public String updateFeature(String id, String feature) {
+		if (id.equals("new")) { // new feature
+			// make new osm_id
+			id="way/10000000";
+
+			Session session = Database.getSession();
+			PreparedStatement statement = Database.prepareFromCache(
+			"INSERT INTO global.master(osm_id, json) VALUES(?, ?)");
+			session.execute(statement.bind(id, feature));
+		} else {
+			Session session = Database.getSession();
+			PreparedStatement statement = Database.prepareFromCache(
+			"UPDATE global.master SET json=? WHERE osm_id=?");
+			session.execute(statement.bind(feature, id));
+		}
+		return id;
+  }
+
+  public String deleteFeature(String id) {
+		Session session = Database.getSession();
+		PreparedStatement statement = Database.prepareFromCache(
+		"DELETE FROM global.master WHERE osm_id=?");
+		session.execute(statement.bind(id));
+		return id;	// success...
+  }
+
 
   private JSONObject reconstruct(Map<Long, JSONObject> map) {
     return null;

@@ -25,6 +25,6 @@ service GeolocationService {
 	/**
 	 * Feature modification calls, return id or failure code
 	 */
-	i32 deleteFeature(1:i32 id);
-	i32 updateFeature(1:i32 id, 2:string feature);
+	string deleteFeature(1:string id);
+	string updateFeature(1:string id, 2:string feature);
 }
