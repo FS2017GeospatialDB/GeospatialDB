@@ -102,8 +102,6 @@ class S2CellId {
   // the (u,v) rectangle covered by the cell.
   Vector2_d GetCenterUV() const;
 
-  std::vector<double> GetCenterUVVector() const;
-
   // Return the S2LatLng corresponding to the center of the given cell.
   S2LatLng ToLatLng() const;
 

@@ -13,6 +13,11 @@ import cfgparser
 # CHANGE THE BEHAVIOR IN 'cfgparser' instead
 BASE_LEVEL = MIN_LEVEL = NUM_COVERING_LIMIT = -1
 
+def get_parent(coord, level):
+    '''Given the coord and the level, return the parent cell of that coord
+    coord is a tuple(lng, lat) according to geojson spec'''
+    latlng = S2LatLng.FromDegrees(coord[1], coord[0])
+    return S2CellId.FromLatLng(latlng).parent(level)
 
 def is_correct_lng_range(lng_ranges, pt_list, percent=.3):
     '''Check if the coordinates fall in the lng_range. Percent to check can be defined as

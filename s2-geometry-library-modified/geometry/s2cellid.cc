@@ -377,14 +377,6 @@ Vector2_d S2CellId::GetCenterUV() const {
 
 }
 
-vector<double> S2CellId::GetCenterUVVector() const {
-  Vector2_d result1 = GetCenterUV();
-  std::vector<double> result;
-  result.push_back(result1.x());
-  result.push_back(result1.y());
-  return result;
-}
-
 S2CellId S2CellId::FromFaceIJWrap(int face, int i, int j) {
   // Convert i and j to the coordinates of a leaf cell just beyond the
   // boundary of this face.  This prevents 32-bit overflow in the case
