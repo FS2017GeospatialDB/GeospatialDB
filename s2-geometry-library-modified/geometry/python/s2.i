@@ -73,8 +73,15 @@ struct Vector2 {
 %template(Vector2_double) Vector2<double>;
 %template(Vector2_int) Vector2<int>;
 
-// %include "carrays.i"
-// %array_class(S2CellId, S2CellIdArray);
+template<class T1>
+struct Vector3 {
+  T1 x();
+  T1 y();
+  T1 z();
+  int Size();
+};
+%template(Vector3_double) Vector3<double>;
+%template(Vector3_int) Vector3<int>;
 
 %typemap(in, numinputs=0)
 S2CellId *OUTPUT(S2CellId temp[4]) {
