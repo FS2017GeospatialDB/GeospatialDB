@@ -2,13 +2,9 @@ import math
 import numpy
 import geojson
 import s2sphere
+import traceback
 
 from copy import deepcopy
-
-toLeft = {0:4, 1:0, 2:4, 3:1, 4:3, 5:4}
-toRight = {0:1, 1:3, 2:1, 3:4, 4:0, 5:1}
-toTop = {0:2, 1:2, 2:3, 3:2, 4:2, 5:0}
-toBottom = {0:5, 1:5, 2:0, 3:5, 4:5, 5:3}
 
 def slicePoint(pointJson, level):
 	pointJson = deepcopy(pointJson)
@@ -69,8 +65,6 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 				if lastCell.face() != cell.face():
 					s3,t3 = get_st(lastPoint)
 					s4,t4 = get_st_for_face(lastPoint.face(), get_closest_xyz(lastPoint, point))
-					print "(Different Face)", get_closest_xyz(lastPoint, point)
-					raise NotImplementedError("LineStrings on different faces not implemented.")
 
 				# Handle Same Side
 				else:
@@ -123,25 +117,6 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 				fakeS,fakeT = get_st_for_face(nextCell.face(), get_xyz(s2sphere.CellId.from_face_ij(face, i, j)))
 				fakePoint = s2sphere.CellId.from_face_ij(nextCell.face(), s2sphere.CellId.st_to_ij(fakeS), s2sphere.CellId.st_to_ij(fakeT))
 
-				if decision == rightT:
-					print "Right!\t",
-				elif decision == leftT:
-					print "Left!\t",
-				elif decision == upT:
-					print "Up!\t",
-				elif decision == downT:
-					print "Down!\t",
-				print lastCell.id(), nextCell.id()			
-				
-				"""
-				print leftT, rightT, upT, downT
-				print "Box: ", min(cs1, cs2), min(ct1, ct2), max(cs1, cs2), max(ct1, ct2)
-				print "Current: ", s3, t3
-				print "Target: ", s4, t4
-				print "Fake Point: ", fakePoint.to_lat_lng()
-				print
-				"""
-
 				result[lastCell.id()]['geometry']['coordinates'].append([fakePoint.to_lat_lng().lng().degrees, fakePoint.to_lat_lng().lat().degrees, 'EL' + decisionCode[0]])
 				if not nextCell.id() in result:
 					result[nextCell.id()] = deepcopy(lineStringJson)
@@ -187,15 +162,12 @@ def sliceMultiLineString(multiLineStringJson, level):
 	return result
 
 # Untested
-def slicePolygon(polygonJson, level):
-	polygonJson = deepcopy(polygonJson)
+def slicePolygon(polygonJsonParam, level):
+	polygonJson = deepcopy(polygonJsonParam)
 	lines = polygonJson['geometry']['coordinates']
-	polygonJson['geometry']['coordinates'] = [[]]
+	polygonJson['geometry']['coordinates'] = []
 	lineStringJson = deepcopy(polygonJson)
 	lineStringJson['geometry']['type'] = 'LineString'
-
-	if len(lines) > 1:
-		raise NotImplementedError("Polygons with holes are not yet implemented.")
 
 	result = {}
 	for line in lines:
@@ -206,31 +178,31 @@ def slicePolygon(polygonJson, level):
 		for location in lineLocations.keys():
 			if not location in result.keys():
 				result[location] = deepcopy(polygonJson)
-			result[location]['geometry']['coordinates'][0].extend(lineLocations[location]['geometry']['coordinates'])
+			result[location]['geometry']['coordinates'].append([])
+			result[location]['geometry']['coordinates'][-1].extend(lineLocations[location]['geometry']['coordinates'])
 
 	for location in result:
-		"""
-		for pointNum,point in enumerate(result[location]['geometry']['coordinates'][0]):
-			if len(point) == 3:
+		for lineNum, line in enumerate(result[location]['geometry']['coordinates']):
+			for pointNum,point in enumerate(line):
+				if len(point) == 3:
 
-				# Entering Polygon, Round the Corner
-				if point[2][1] == 'E' and pointNum != 0:
-					print result[location]['geometry']['coordinates'][0][pointNum-1][2], result[location]['geometry']['coordinates'][0][pointNum][2]
-					newPoints = wrapCorner(location, clockwise, result[location]['geometry']['coordinates'][0][pointNum-1][2], result[location]['geometry']['coordinates'][0][pointNum][2])
-					if newPoints != None:
-						result[location]['geometry']['coordinates'][0][pointNum:pointNum] = newPoints
+					# Entering Polygon, Round the Corner
+					if point[2][1] == 'E' and pointNum != 0:
+						newPoints = wrapCorner(location, clockwise, line[pointNum-1][2], line[pointNum][2])
+						if newPoints != None:
+							line[pointNum:pointNum] = newPoints
 
-				# Leaving the Polygon, Nothing to See Here
-				elif point[2][1] == 'L':
-					pass
-		"""
+					# Leaving the Polygon, Nothing to See Here
+					elif point[2][1] == 'L':
+						pass
 
-		# Check if result[location] is not closed
-		if result[location]['geometry']['coordinates'][0][0] != result[location]['geometry']['coordinates'][0][-1]:
-			newPoints = wrapCorner(location, clockwise, result[location]['geometry']['coordinates'][0][-1][2], result[location]['geometry']['coordinates'][0][0][2])
-			if newPoints != None:
-				result[location]['geometry']['coordinates'][0].extend(newPoints)
-			result[location]['geometry']['coordinates'][0].append(result[location]['geometry']['coordinates'][0][0])		
+			# Check if result[location] is not closed
+			if line[0] != line[-1]:
+				newPoints = wrapCorner(location, clockwise, line[-1][2], line[0][2])
+				if newPoints != None:
+					line.extend(newPoints)
+				line.append(line[0])
+		
 
 	# Search for enclosed cells not listed here that need to be added
 	"""
@@ -342,9 +314,9 @@ def get_xyz(cellId):
 	elif face == 1:				# Right Face
 		x,y,z = 1,t,-s
 	elif face == 2:				# Top Face
-		x,y,z = s,1,t-1
+		x,y,z = 1-t,1,-s
 	elif face == 3:				# Back Face
-		x,y,z = 1-t,s,-1
+		x,y,z = 1-t,1-s,-1
 	elif face == 4:				# Left Face
 		x,y,z = 0,1-s,t-1
 	elif face == 5:				# Bottom Face
@@ -359,15 +331,20 @@ def get_st_for_face(face, xyz):
 	elif face == 1:
 		return -z,y
 	elif face == 2:
-		return x,1+z
+		return -z,1-x
 	elif face == 3:
-		return y,1-x
+		return 1-y,1-x
 	elif face == 4:
 		return 1-y,1+z
 	elif face == 5:
 		return x,1+z
 
-# Untested and Broken
+toLeft = {0:4, 1:0, 2:4, 3:1, 4:3, 5:4}
+toRight = {0:1, 1:3, 2:1, 3:4, 4:0, 5:1}
+toTop = {0:2, 1:2, 2:3, 3:2, 4:2, 5:0}
+toBottom = {0:5, 1:5, 2:0, 3:5, 4:5, 5:3}
+
+# Untested
 def get_closest_xyz(srcCell, destCell):
 	srcFace = srcCell.face()
 	destFace = destCell.face()
@@ -380,7 +357,7 @@ def get_closest_xyz(srcCell, destCell):
 		
 		# apply rotation formulas for each possible configuration
 		# find shortest route and return x,y,z
-		pass
+		raise NotImplementedError("Route finding for consecutive points on opposing faces is not implemented.")
 
 	# Adjacent Faces
 	else:
@@ -389,53 +366,14 @@ def get_closest_xyz(srcCell, destCell):
 		score1 = score2 = score3 = float('inf')
 
 		if toLeft[srcFace] == destFace:
-			
 			x,y,z = translate(-offset[0], -offset[1], -offset[2], x, y, z)
 			x,y,z = rotate(rot[1][0], rot[1][1], rot[1][2], x, y, z)
 			x,y,z = translate(offset[0], offset[1], offset[2], x, y, z)
-			score1 = distance(srcX, srcY, srcZ, x, y, z)
-
-			xa,ya,za = translate(-offset[0], -offset[1], -offset[2], x, y, z)
-			xa,ya,za = rotate(rot[2][0], rot[2][1], rot[2][2], xa, ya, za)
-			xa,ya,za = translate(offset[0], offset[1], offset[2], xa, ya, za)
-			score2 = distance(srcX, srcY, srcZ, xa, ya, za)
-			
-			xb,yb,zb = translate(-offset[0], -offset[1], -offset[2], x, y, z)
-			xb,yb,zb = rotate(-rot[2][0], -rot[2][1], -rot[2][2], xb, yb, zb)
-			xb,yb,zb = translate(offset[0] + rot[1][0] - rot[0][0], offset[1] + rot[1][1] - rot[0][1], offset[2] + rot[1][2] - rot[0][2], xb, yb, zb)
-			score3 = distance(srcX, srcY, srcZ, xb, yb, zb)
-
-			#print x,y,z,xa,ya,za,xb,yb,zb
-			if score2 < score1:
-				x,y,z = xa,ya,za
-				score1 = score2
-			if score3 < score1:
-				x,y,z = xb,yb,zb
-				score1 = score3
 
 		elif toRight[srcFace] == destFace:
 			x,y,z = translate(-offset[0] - rot[0][0], -offset[1] - rot[0][1], -offset[2] - rot[0][2], x, y, z)
 			x,y,z = rotate(-rot[1][0], -rot[1][1], -rot[1][2], x, y, z)
 			x,y,z = translate(offset[0] + rot[0][0], offset[1] + rot[0][1], offset[2] + rot[0][2], x, y, z)
-			score1 = distance(srcX, srcY, srcZ, x, y, z)
-
-			xa,ya,za = translate(-offset[0] - rot[0][0], -offset[1] - rot[0][1], -offset[2] - rot[0][2], x, y, z)
-			xa,ya,za = rotate(-rot[2][0], -rot[2][1], -rot[2][2], xa, ya, za)
-			xa,ya,za = translate(offset[0] + rot[0][0], offset[1] + rot[0][1], offset[2] + rot[0][2], xa, ya, za)
-			score2 = distance(srcX, srcY, srcZ, xa, ya, za)
-			
-			xb,yb,zb = translate(-offset[0] - rot[0][0], -offset[1] - rot[0][1], -offset[2] - rot[0][2], x, y, z)
-			xb,yb,zb = rotate(rot[2][0], rot[2][1], rot[2][2], xb, yb, zb)
-			xb,yb,zb = translate(offset[0] + rot[0][0] + rot[1][0], offset[1] + rot[0][1] + rot[1][1], offset[2] + rot[0][2] + rot[1][2], xb, yb, zb)
-			score3 = distance(srcX, srcY, srcZ, xb, yb, zb)
-
-			print x,y,z,xa,ya,za,xb,yb,zb
-			if score2 < score1:
-				x,y,z = xa,ya,za
-				score1 = score2
-			if score3 < score1:
-				x,y,z = xb,yb,zb
-				score1 = score3
 
 		elif toTop[srcFace] == destFace:
 			x,y,z = translate(-offset[0] - rot[1][0], -offset[1] - rot[1][1], -offset[2] - rot[1][2], x, y, z)
@@ -444,7 +382,7 @@ def get_closest_xyz(srcCell, destCell):
 
 		elif toBottom[srcFace] == destFace:
 			x,y,z = translate(-offset[0], -offset[1], -offset[2], x, y, z)
-			x,y,z = rotate(rot[0][0], rot[0][1], rot[0][2], x, y, z)
+			x,y,z = rotate(-rot[0][0], -rot[0][1], -rot[0][2], x, y, z)
 			x,y,z = translate(offset[0], offset[1], offset[2], x, y, z)
 
 		# determine if left, up, right, down
@@ -453,22 +391,22 @@ def get_closest_xyz(srcCell, destCell):
 		# find shortest route and return x,y,z
 	return x,y,z
 
-# Broken
+# Untested
 def getFaceAxes(face):
 	if face == 0:
 		return [[1,0,0], [0,1,0], [0,0,1]]
 	elif face == 1:
-		return [[0,0,-1], [0,1,0], [1,0,0]]
+		return [[0,0,-1], [0,1,0], [-1,0,0]]
 	elif face == 2:
 		return [[1,0,0], [0,0,-1], [0,1,0]]
 	elif face == 3:
 		return [[-1,0,0], [0,1,0], [0,0,-1]]
 	elif face == 4:
-		return [[0,0,1], [0,1,0], [-1,0,0]]
+		return [[0,0,1], [0,1,0], [1,0,0]]
 	elif face == 5:
 		return [[1,0,0], [0,0,1], [0,-1,0]]
 
-# Broken
+# Untested
 def getFaceOffset(face):
 	if face == 0:
 		return [0,0,0]
@@ -477,13 +415,13 @@ def getFaceOffset(face):
 	elif face == 2:
 		return [0,1,0]
 	elif face == 3:
-		return [0,0,-1]
+		return [1,0,-1]
 	elif face == 4:
-		return [0,0,0]
+		return [0,0,-1]
 	elif face == 5:
 		return [0,0,-1]
 
-# Broken
+# Untested
 def rotate(axisX, axisY, axisZ, x, y, z):
 	if abs(axisX) == 1:
 		return rotateX(axisX > 0, x, y, z)
@@ -492,32 +430,32 @@ def rotate(axisX, axisY, axisZ, x, y, z):
 	elif abs(axisZ):
 		return rotateZ(axisZ > 0, x, y, z)
 
-# Broken
+# Untested
 def rotateX(positive, x, y, z):
 	if positive:
 		return x, -z, y
 	else:
 		return x, z, -y
 
-# Broken
+# Untested
 def rotateY(positive, x, y, z):
 	if positive:
 		return z, y, -x
 	else:
 		return -z, y, x
 
-# Broken
+# Untested
 def rotateZ(positive, x, y, z):
 	if positive:
-		return y, -x, z
-	else:
 		return -y, x, z
+	else:
+		return y, -x, z
 
-# Broken
+# Untested
 def translate(tx, ty, tz, x, y, z):
 	return x+tx, y+ty, z+tz
 
-# Broken
+# Untested
 def distance(x1, y1, z1, x2, y2, z2):
 	return math.sqrt((x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2)
 
@@ -535,7 +473,6 @@ def isClockwise(line):
 			if angle > lastAngle + math.pi:
 				delta -= 2 * math.pi
 			
-			#print "Last Angle: ",lastAngle,"\tNew Angle: ",angle,"\tDelta: ",delta
 			theta += delta
 			lastAngle = angle
 		lastPoint = point
