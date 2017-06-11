@@ -2,17 +2,10 @@ import math
 import numpy
 import geojson
 import s2sphere
-import geohelper
 import traceback
 
 from copy import deepcopy
-
 DEBUG_PRINT = False
-
-toLeft = {0:4, 1:0, 2:4, 3:1, 4:3, 5:4}
-toRight = {0:1, 1:3, 2:1, 3:4, 4:0, 5:1}
-toTop = {0:2, 1:2, 2:3, 3:2, 4:2, 5:0}
-toBottom = {0:5, 1:5, 2:0, 3:5, 4:5, 5:3}
 
 def slice_feature(json, level):
 	'''Given the raw_feature and the desired level, cutting the feature.
@@ -20,7 +13,7 @@ def slice_feature(json, level):
 	The result will be {CellId (long): json}, where cellid is the region
 	that feature belongs to, json is the cutted geojson feature'''
 	feature_set = dict()
-	geo_type = geohelper.get_type(json)
+	geo_type = json['geometry']['type']
 	# no need to slice points, as duplicate method already stores original data
 	try:
 		if geo_type == 'MultiPoint':
@@ -97,8 +90,6 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 				if lastCell.face() != cell.face():
 					s3,t3 = get_st(lastPoint)
 					s4,t4 = get_st_for_face(lastPoint.face(), get_closest_xyz(lastPoint, point))
-					if DEBUG_PRINT: print "(Different Face)", get_closest_xyz(lastPoint, point)
-					raise NotImplementedError("LineStrings on different faces not implemented.")
 
 				# Handle Same Side
 				else:
@@ -367,9 +358,9 @@ def get_xyz(cellId):
 	elif face == 1:				# Right Face
 		x,y,z = 1,t,-s
 	elif face == 2:				# Top Face
-		x,y,z = s,1,t-1
+		x,y,z = 1-t,1,-s
 	elif face == 3:				# Back Face
-		x,y,z = 1-t,s,-1
+		x,y,z = 1-t,1-s,-1
 	elif face == 4:				# Left Face
 		x,y,z = 0,1-s,t-1
 	elif face == 5:				# Bottom Face
@@ -384,15 +375,20 @@ def get_st_for_face(face, xyz):
 	elif face == 1:
 		return -z,y
 	elif face == 2:
-		return x,1+z
+		return -z,1-x
 	elif face == 3:
-		return y,1-x
+		return 1-y,1-x
 	elif face == 4:
 		return 1-y,1+z
 	elif face == 5:
 		return x,1+z
 
-# Untested and Broken
+toLeft = {0:4, 1:0, 2:4, 3:1, 4:3, 5:4}
+toRight = {0:1, 1:3, 2:1, 3:4, 4:0, 5:1}
+toTop = {0:2, 1:2, 2:3, 3:2, 4:2, 5:0}
+toBottom = {0:5, 1:5, 2:0, 3:5, 4:5, 5:3}
+
+# Untested
 def get_closest_xyz(srcCell, destCell):
 	srcFace = srcCell.face()
 	destFace = destCell.face()
@@ -405,7 +401,7 @@ def get_closest_xyz(srcCell, destCell):
 		
 		# apply rotation formulas for each possible configuration
 		# find shortest route and return x,y,z
-		pass
+		raise NotImplementedError("Route finding for consecutive points on opposing faces is not implemented.")
 
 	# Adjacent Faces
 	else:
@@ -414,53 +410,14 @@ def get_closest_xyz(srcCell, destCell):
 		score1 = score2 = score3 = float('inf')
 
 		if toLeft[srcFace] == destFace:
-			
 			x,y,z = translate(-offset[0], -offset[1], -offset[2], x, y, z)
 			x,y,z = rotate(rot[1][0], rot[1][1], rot[1][2], x, y, z)
 			x,y,z = translate(offset[0], offset[1], offset[2], x, y, z)
-			score1 = distance(srcX, srcY, srcZ, x, y, z)
-
-			xa,ya,za = translate(-offset[0], -offset[1], -offset[2], x, y, z)
-			xa,ya,za = rotate(rot[2][0], rot[2][1], rot[2][2], xa, ya, za)
-			xa,ya,za = translate(offset[0], offset[1], offset[2], xa, ya, za)
-			score2 = distance(srcX, srcY, srcZ, xa, ya, za)
-			
-			xb,yb,zb = translate(-offset[0], -offset[1], -offset[2], x, y, z)
-			xb,yb,zb = rotate(-rot[2][0], -rot[2][1], -rot[2][2], xb, yb, zb)
-			xb,yb,zb = translate(offset[0] + rot[1][0] - rot[0][0], offset[1] + rot[1][1] - rot[0][1], offset[2] + rot[1][2] - rot[0][2], xb, yb, zb)
-			score3 = distance(srcX, srcY, srcZ, xb, yb, zb)
-
-			#print x,y,z,xa,ya,za,xb,yb,zb
-			if score2 < score1:
-				x,y,z = xa,ya,za
-				score1 = score2
-			if score3 < score1:
-				x,y,z = xb,yb,zb
-				score1 = score3
 
 		elif toRight[srcFace] == destFace:
 			x,y,z = translate(-offset[0] - rot[0][0], -offset[1] - rot[0][1], -offset[2] - rot[0][2], x, y, z)
 			x,y,z = rotate(-rot[1][0], -rot[1][1], -rot[1][2], x, y, z)
 			x,y,z = translate(offset[0] + rot[0][0], offset[1] + rot[0][1], offset[2] + rot[0][2], x, y, z)
-			score1 = distance(srcX, srcY, srcZ, x, y, z)
-
-			xa,ya,za = translate(-offset[0] - rot[0][0], -offset[1] - rot[0][1], -offset[2] - rot[0][2], x, y, z)
-			xa,ya,za = rotate(-rot[2][0], -rot[2][1], -rot[2][2], xa, ya, za)
-			xa,ya,za = translate(offset[0] + rot[0][0], offset[1] + rot[0][1], offset[2] + rot[0][2], xa, ya, za)
-			score2 = distance(srcX, srcY, srcZ, xa, ya, za)
-			
-			xb,yb,zb = translate(-offset[0] - rot[0][0], -offset[1] - rot[0][1], -offset[2] - rot[0][2], x, y, z)
-			xb,yb,zb = rotate(rot[2][0], rot[2][1], rot[2][2], xb, yb, zb)
-			xb,yb,zb = translate(offset[0] + rot[0][0] + rot[1][0], offset[1] + rot[0][1] + rot[1][1], offset[2] + rot[0][2] + rot[1][2], xb, yb, zb)
-			score3 = distance(srcX, srcY, srcZ, xb, yb, zb)
-
-			if DEBUG_PRINT: print x,y,z,xa,ya,za,xb,yb,zb
-			if score2 < score1:
-				x,y,z = xa,ya,za
-				score1 = score2
-			if score3 < score1:
-				x,y,z = xb,yb,zb
-				score1 = score3
 
 		elif toTop[srcFace] == destFace:
 			x,y,z = translate(-offset[0] - rot[1][0], -offset[1] - rot[1][1], -offset[2] - rot[1][2], x, y, z)
@@ -469,7 +426,7 @@ def get_closest_xyz(srcCell, destCell):
 
 		elif toBottom[srcFace] == destFace:
 			x,y,z = translate(-offset[0], -offset[1], -offset[2], x, y, z)
-			x,y,z = rotate(rot[0][0], rot[0][1], rot[0][2], x, y, z)
+			x,y,z = rotate(-rot[0][0], -rot[0][1], -rot[0][2], x, y, z)
 			x,y,z = translate(offset[0], offset[1], offset[2], x, y, z)
 
 		# determine if left, up, right, down
@@ -478,22 +435,22 @@ def get_closest_xyz(srcCell, destCell):
 		# find shortest route and return x,y,z
 	return x,y,z
 
-# Broken
+# Untested
 def getFaceAxes(face):
 	if face == 0:
 		return [[1,0,0], [0,1,0], [0,0,1]]
 	elif face == 1:
-		return [[0,0,-1], [0,1,0], [1,0,0]]
+		return [[0,0,-1], [0,1,0], [-1,0,0]]
 	elif face == 2:
 		return [[1,0,0], [0,0,-1], [0,1,0]]
 	elif face == 3:
 		return [[-1,0,0], [0,1,0], [0,0,-1]]
 	elif face == 4:
-		return [[0,0,1], [0,1,0], [-1,0,0]]
+		return [[0,0,1], [0,1,0], [1,0,0]]
 	elif face == 5:
 		return [[1,0,0], [0,0,1], [0,-1,0]]
 
-# Broken
+# Untested
 def getFaceOffset(face):
 	if face == 0:
 		return [0,0,0]
@@ -502,13 +459,13 @@ def getFaceOffset(face):
 	elif face == 2:
 		return [0,1,0]
 	elif face == 3:
-		return [0,0,-1]
+		return [1,0,-1]
 	elif face == 4:
-		return [0,0,0]
+		return [0,0,-1]
 	elif face == 5:
 		return [0,0,-1]
 
-# Broken
+# Untested
 def rotate(axisX, axisY, axisZ, x, y, z):
 	if abs(axisX) == 1:
 		return rotateX(axisX > 0, x, y, z)
@@ -517,32 +474,32 @@ def rotate(axisX, axisY, axisZ, x, y, z):
 	elif abs(axisZ):
 		return rotateZ(axisZ > 0, x, y, z)
 
-# Broken
+# Untested
 def rotateX(positive, x, y, z):
 	if positive:
 		return x, -z, y
 	else:
 		return x, z, -y
 
-# Broken
+# Untested
 def rotateY(positive, x, y, z):
 	if positive:
 		return z, y, -x
 	else:
 		return -z, y, x
 
-# Broken
+# Untested
 def rotateZ(positive, x, y, z):
 	if positive:
-		return y, -x, z
-	else:
 		return -y, x, z
+	else:
+		return y, -x, z
 
-# Broken
+# Untested
 def translate(tx, ty, tz, x, y, z):
 	return x+tx, y+ty, z+tz
 
-# Broken
+# Untested
 def distance(x1, y1, z1, x2, y2, z2):
 	return math.sqrt((x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2)
 
