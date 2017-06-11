@@ -6,6 +6,20 @@ import traceback
 
 from copy import deepcopy
 
+def slice(json, level):
+	jsons = []
+	if json['geometry']['type'] == 'Point':
+	    jsons = slice.slicePoint(json, level)
+	elif json['geometry']['type'] == 'MultiPoint':
+	    jsons = slice.sliceMultiPoint(json, level)
+	elif json['geometry']['type'] == 'LineString':
+	    jsons = slice.sliceLineString(json, level)
+	elif json['geometry']['type'] == 'Polygon':
+	    jsons = slice.slicePolygon(json, level)
+	elif json['geometry']['type'] == 'MultiPolygon':
+	    jsons = slice.sliceMultiPolygon(json, level)
+	return jsons
+
 def slicePoint(pointJson, level):
 	pointJson = deepcopy(pointJson)
 	coord = pointJson['geometry']['coordinates']
