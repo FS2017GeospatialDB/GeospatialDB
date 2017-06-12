@@ -4,6 +4,7 @@
 
 import sys
 from timeit import default_timer as timer
+import ijson
 import geojson
 import dbhelper
 import geohelper
@@ -79,21 +80,45 @@ def load_by_cutting(feature):
             cut_feature = slicing.slice_feature(feature, cutting_lv)
             dbhelper.insert_by_cut_feature(cut_feature)
 
+def load_into_master(feature):
+    '''Load the original copy of the feature into the master copy table'''
+    dbhelper.insert_master(feature)
 
-def run(filename):
+
+def run(file_list):
     '''Execute entrance. Given the geojson filename, load the file to the database'''
     print 'Loading feature files...'
-    features = load_geojson(filename)['features']
+    for filename in file_list:
+        with open(filename, 'r') as file:
+            #features = load_geojson(filename)['features']
+            print 'Storing to database...'
+            for feature in jsonItems(file, 'features.item')
+                start = timer()
+                
+                load_into_master(feature)
+                load_by_duplication(feature)
+                load_by_cutting(feature)
+                
+                end = timer()
+                print 'Done!'
+                print 'Storing to db finished in %.5fs' % (end - start)
 
-    print 'Storing to database...'
-    start = timer()
-    for feature in features:
-        load_by_duplication(feature)
-        load_by_cutting(feature)
-    end = timer()
-    print 'Done!'
-    print 'Storing to db finished in %.5fs' % (end - start)
-
+def jsonItems(file, prefix):
+    items = ijson.parse(file)
+    try:
+        while True:
+            current, event, value = next(items)
+            if current == prefix:
+                builder = ijson.common.ObjectBuilder()
+                end_event = event.replace('start', 'end')
+                while (current, event) != (prefix, end_event):
+                    if event == 'number':
+                        value = float(value)
+                    builder.event(event, value)
+                    current, event, value = next(items)
+                yield builder.value
+    except StopIteration:
+        pass
 
 def __load_config():
     cfg = cfgparser.load()
@@ -109,6 +134,6 @@ __load_config()
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         print_usage(1)
-    run(sys.argv[1])
+    run(sys.argv[1:])

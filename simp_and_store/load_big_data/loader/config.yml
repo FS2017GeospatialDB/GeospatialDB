@@ -16,9 +16,9 @@ geohelper:
 
 dbhelper:
   list of node: ['127.0.0.1']
-  key space: 'global'
+  key space: 'global01'
   truncate table when start: false
 
 main:
   duplication method: true
-  cutting method: false
+  cutting method: true
