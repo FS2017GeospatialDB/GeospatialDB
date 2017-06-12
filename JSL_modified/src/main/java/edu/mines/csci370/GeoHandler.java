@@ -298,3 +298,29 @@ public class GeoHandler implements GeolocationService.Iface {
         return results;
     }
 }
+
+public String updateFeature(String id, String feature) {
+    if (id.equals("new")) { // new feature
+        // make new osm_id
+        id="way/10000000";
+
+        Session session = Database.getSession();
+        PreparedStatement statement = Database.prepareFromCache(
+        "INSERT INTO global.master(osm_id, json) VALUES(?, ?)");
+        session.execute(statement.bind(id, feature));
+    } else {
+        Session session = Database.getSession();
+        PreparedStatement statement = Database.prepareFromCache(
+        "UPDATE global.master SET json=? WHERE osm_id=?");
+        session.execute(statement.bind(feature, id));
+    }
+    return id;
+}
+
+public String deleteFeature(String id) {
+    Session session = Database.getSession();
+    PreparedStatement statement = Database.prepareFromCache(
+    "DELETE FROM global.master WHERE osm_id=?");
+    session.execute(statement.bind(id));
+    return id;    // success...
+}
