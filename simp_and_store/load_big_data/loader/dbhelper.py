@@ -17,11 +17,23 @@ CFG = cfgparser.load_module('dbhelper')
 TRUNCATE_TABLE_WHEN_START = CFG['truncate table when start']
 CLUSTER_LIST = CFG['list of node']
 KEYSPACE = CFG['key space']
-CLUSTER = Cluster(CLUSTER_LIST)
-SESSION = CLUSTER.connect(KEYSPACE)
+#CLUSTER = Cluster(CLUSTER_LIST)
+CLUSTER = None
+#SESSION = CLUSTER.connect(KEYSPACE)
+SESSION = None
 PS_INSERT = '''INSERT INTO slave (level, s2_id, time, osm_id, json, is_cut) VALUES (?, ?, ?, ?, ?, ?)'''
 PREPARED_INSERT = SESSION.prepare(PS_INSERT)
 PREPARED_MASTER_INSERT = SESSION.prepare('''INSERT INTO master (osm_id, json) VALUES (?, ?))''')
+
+def connect_to_cluster():
+    global CLUSTER
+    global SESSION
+    for node in CLUSTER_LIST:
+        try:
+            CLUSTER = Cluster([node])
+            SESSION = CLUSTER.connect(KEYSPACE)
+        except:
+            pass
 
 
 def to_64bit(number):
@@ -89,5 +101,6 @@ def __before_exit():
 ##############  INITIALIZE ################
 insert_by_covering.handle0 = None
 insert_by_covering.handle1 = None
+connect_to_cluster()
 atexit.register(__before_exit)
 __initialize()
