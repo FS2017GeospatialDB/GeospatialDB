@@ -1,17 +1,17 @@
 #!/bin/bash
 file=${1}
-for lat in {38..42..2}
+for lat in $(seq 37.5 0.5 41)
 do
-	for lon in {-108..-102..2}
+	for lon in $(seq -109 0.5 -102)
 	do
-		l=$(echo ${lon}-2.0 | bc)
-		b=$(echo ${lat}-2.0 | bc)
+		l=$(echo ${lon}-0.5 | bc)
+		b=$(echo ${lat}-0.5 | bc)
 		echo "Top: ${lat}"
 		echo "Bot: ${b}"
 		echo "Left: ${l}"
 		echo "Right: ${lon}"
 
-		bzcat ${file} | ~/Downloads/osmosis/bin/osmosis --read-xml enableDateParsing=no file=- --bounding-box top=${lat} left=${l} bottom=${b} right=${lon} --write-xml file=- | cat > temp.osm
+		~/Downloads/osmosis/bin/osmosis --read-pbf file=${file} --bounding-box top=${lat} left=${l} bottom=${b} right=${lon} --write-xml file=temp.osm
 		
 		echo Converting to GeoJSON...
 		node --max_old_space_size=8192 /usr/local/lib/node_modules/osmtogeojson/osmtogeojson temp.osm > temp.json
