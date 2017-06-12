@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.HashSet;
 
 public class GeoHandler implements GeolocationService.Iface {
     private static int OFFSET = 2;
@@ -180,6 +181,30 @@ public class GeoHandler implements GeolocationService.Iface {
 
         return result;
     }
+    
+    private List<Feature> justDupeMethod(TreeMap<Integer, ArrayList<Feature>> featureMap, 
+    		TreeMap<Integer, ArrayList<String>> osmIdMap) {
+    	HashMap<String, HashSet<Feature>> resultMap = new HashMap<>();
+    	for (int level : featureMap.keySet()) {
+    		for (int i = 0; i < featureMap.get(level).size(); i++) {
+    			Feature feature = featureMap.get(level).get(i);
+    			String osmId = osmIdMap.get(level).get(i);
+    			if (!resultMap.containsKey(osmId)) {
+    				resultMap.put(osmId, new HashSet<>());
+    			}
+    			resultMap.get(osmId).add(feature);
+    		}			
+    	}
+    	
+    	// Adding all unique features to results array
+    	ArrayList<Feature> results = new ArrayList<>();
+    	for (String osmId : resultMap.keySet()) {
+    		for (Feature feature : resultMap.get(osmId)) {
+    			results.add(feature);
+    		}
+    	}
+    	return results;
+    }
 
     private List<Feature> combineMethodResults(TreeMap<Integer, ArrayList<Feature>> featureMap, TreeMap<Integer, ArrayList<String>> osmIdMap) {
         boolean reduce = true;
@@ -232,7 +257,7 @@ public class GeoHandler implements GeolocationService.Iface {
 
         TreeMap<Integer, ArrayList<Feature>> featureMap = new TreeMap<Integer, ArrayList<Feature>>();
         TreeMap<Integer, ArrayList<String>> osmIdMap = new TreeMap<Integer, ArrayList<String>>();
-
+        //TreeMap<Integer, ArrayList<String>> uuidMap = new TreeMap<Integer, ArrayList<String>>();
 
         int coveringCounter = 0;
         int featureCounter = 0;
@@ -246,9 +271,11 @@ public class GeoHandler implements GeolocationService.Iface {
                     if (!featureMap.containsKey(level)) {
                         featureMap.put(level, new ArrayList<>());
                         osmIdMap.put(level, new ArrayList<>());
+                        //uuidMap.put(level, new ArrayList<>());
                     }
                     featureMap.get(level).add(feature);
                     osmIdMap.get(level).add(row.getString("osm_id"));
+                    //uuidMap.get(level).add(row.getString("uuid"));
                 }
             }
         }
@@ -258,6 +285,7 @@ public class GeoHandler implements GeolocationService.Iface {
         long finish = System.currentTimeMillis();
         //return combineMethodResults(featureMap, osmIdMap);
         return letMeMessUpThings(featureMap, osmIdMap);
+        //return justDupeMethod(featureMap, osmIdMap);
     }
 
     @Override
