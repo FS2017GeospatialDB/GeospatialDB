@@ -327,27 +327,40 @@ public class GeoHandler implements GeolocationService.Iface {
         return results;
     }
 
-    public String updateFeature(String id, String feature) throws IOException {
+    @Override
+    public String updateFeature(String id, String feature) {
         if (id.equals("new")) { // new feature
             // make new osm_id based on timestamp
             id = Long.toString(System.currentTimeMillis());
 
-        // insert into slave/master by calling python script
-            ProcessBuilder pb = new ProcessBuilder("python", "jsl.py", id, feature, "new");
-            Process p = pb.start();
+            // insert into slave/master by calling python script
+            try {
+                ProcessBuilder pb = new ProcessBuilder("python", "jsl.py", id, feature, "new");
+                Process p = pb.start();
+            } catch(IOException e) {
+                System.out.println(e);
+            }
         } else {
             // insert into slave/master by calling python script
-            ProcessBuilder pb = new ProcessBuilder("python", "jsl.py", id, feature, "modify");
-            Process p = pb.start();
+            try {
+                ProcessBuilder pb = new ProcessBuilder("python", "jsl.py", id, feature, "modify");            
+                Process p = pb.start();
+            } catch(IOException e) {
+                System.out.println(e);
+            }
         }
         return id;
     }
 
-    public String deleteFeature(String id) throws IOException {
+    @Override
+    public String deleteFeature(String id) {
         // delete from slave/master by calling python script
+        try {
         ProcessBuilder pb = new ProcessBuilder("python", "jsl.py", id, "", "delete");
         Process p = pb.start();
-
+        } catch(IOException e) {
+            System.out.println(e);
+        }
         return id;    // success...
     }
 }
