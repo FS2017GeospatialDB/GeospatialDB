@@ -12,11 +12,11 @@ geohelper:
   # in a level. If the current level cannot hold the featuer within the number of tiles limit
   # defined here, it will seek a higher level covering, which esentially reduce the level by 1.
   # NOTE: this parameter does not limit the number of tiles for the top level. 
-  num covering limit: 4
+  num covering limit: 3
 
 dbhelper:
   list of node: ['127.0.0.1']
-  key space: 'global01'
+  key space: 'global'
   truncate table when start: false
 
 main:
