@@ -16,7 +16,7 @@ def slice_feature(json, level):
 	geo_type = json['geometry']['type']
 	# no need to slice points, as duplicate method already stores original data
 	try:
-		if geo_type == 'MultiPoint':
+		if geo_type == 'MultiPoint':   
 			feature_set = sliceMultiPoint(json, level)
 		elif geo_type == 'LineString':
 			feature_set = sliceLineString(json, level)
