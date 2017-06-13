@@ -7,8 +7,6 @@ import cassandra
 
 from cassandra.cluster import Cluster
 
-MAX_DATE = (1 << 47)
-
 def propogate():
     # Connect to the Database
     cluster = Cluster()
