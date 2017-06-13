@@ -17,12 +17,7 @@ import org.geotools.geometry.jts.JTSFactoryFinder;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.TreeMap;
-import java.util.HashSet;
-import java.lang.ProcessBuilder;
+import java.util.*;
 
 public class GeoHandler implements GeolocationService.Iface {
     private static int OFFSET = 2;
@@ -148,7 +143,7 @@ public class GeoHandler implements GeolocationService.Iface {
                 Feature feature = featureMap.get(level).get(i);
                 String osmId = osmIdMap.get(level).get(i);
                 System.out.println(osmId);
-                if (osmId.equals("way/33113233")){
+                if (osmId.equals("way/33113233")) {
                     System.out.println(feature.json);
                 }
                 if (!holder.containsKey(osmId)) {
@@ -182,9 +177,9 @@ public class GeoHandler implements GeolocationService.Iface {
 
         return result;
     }
-    
-    private List<Feature> justDupeMethod(TreeMap<Integer, ArrayList<Feature>> featureMap, 
-            TreeMap<Integer, ArrayList<String>> osmIdMap) {
+
+    private List<Feature> justDupeMethod(TreeMap<Integer, ArrayList<Feature>> featureMap,
+                                         TreeMap<Integer, ArrayList<String>> osmIdMap) {
         HashMap<String, HashSet<Feature>> resultMap = new HashMap<>();
         for (int level : featureMap.keySet()) {
             for (int i = 0; i < featureMap.get(level).size(); i++) {
@@ -194,9 +189,9 @@ public class GeoHandler implements GeolocationService.Iface {
                     resultMap.put(osmId, new HashSet<>());
                 }
                 resultMap.get(osmId).add(feature);
-            }            
+            }
         }
-        
+
         // Adding all unique features to results array
         ArrayList<Feature> results = new ArrayList<>();
         for (String osmId : resultMap.keySet()) {
@@ -327,6 +322,7 @@ public class GeoHandler implements GeolocationService.Iface {
         return results;
     }
 
+
     @Override
     public String updateFeature(String id, String feature) {
         if (id.equals("new")) { // new feature
@@ -337,15 +333,15 @@ public class GeoHandler implements GeolocationService.Iface {
             try {
                 ProcessBuilder pb = new ProcessBuilder("python2.7", "jsl.py", id, feature, "new");
                 Process p = pb.start();
-            } catch(IOException e) {
+            } catch (IOException e) {
                 System.out.println(e);
             }
         } else {
             // insert into slave/master by calling python script
             try {
-                ProcessBuilder pb = new ProcessBuilder("python2.7", "jsl.py", id, feature, "modify");            
+                ProcessBuilder pb = new ProcessBuilder("python2.7", "jsl.py", id, feature, "modify");
                 Process p = pb.start();
-            } catch(IOException e) {
+            } catch (IOException e) {
                 System.out.println(e);
             }
         }
@@ -356,9 +352,9 @@ public class GeoHandler implements GeolocationService.Iface {
     public String deleteFeature(String id) {
         // delete from slave/master by calling python script
         try {
-        ProcessBuilder pb = new ProcessBuilder("python", "jsl.py", id, "", "delete");
-        Process p = pb.start();
-        } catch(IOException e) {
+            ProcessBuilder pb = new ProcessBuilder("python", "jsl.py", id, "", "delete");
+            Process p = pb.start();
+        } catch (IOException e) {
             System.out.println(e);
         }
         return id;    // success...
