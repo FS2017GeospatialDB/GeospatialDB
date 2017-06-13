@@ -23,6 +23,7 @@ public class Database {
     public static void initialize() {
         _cluster = Cluster.builder()
             .addContactPoints("127.0.0.1")
+	    .withPort(9041)
             .build();
 
         _session = _cluster.connect();

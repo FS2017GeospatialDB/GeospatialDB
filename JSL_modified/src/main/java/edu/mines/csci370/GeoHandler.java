@@ -335,7 +335,7 @@ public class GeoHandler implements GeolocationService.Iface {
 
             // insert into slave/master by calling python script
             try {
-                ProcessBuilder pb = new ProcessBuilder("python", "jsl.py", id, feature, "new");
+                ProcessBuilder pb = new ProcessBuilder("python2.7", "jsl.py", id, feature, "new");
                 Process p = pb.start();
             } catch(IOException e) {
                 System.out.println(e);
@@ -343,7 +343,7 @@ public class GeoHandler implements GeolocationService.Iface {
         } else {
             // insert into slave/master by calling python script
             try {
-                ProcessBuilder pb = new ProcessBuilder("python", "jsl.py", id, feature, "modify");            
+                ProcessBuilder pb = new ProcessBuilder("python2.7", "jsl.py", id, feature, "modify");            
                 Process p = pb.start();
             } catch(IOException e) {
                 System.out.println(e);
