@@ -27,6 +27,9 @@ import edu.mines.csci370.api.GeolocationService;
 
 public class GeoHandler implements GeolocationService.Iface {
 
+  private static final double SCALE_8 = 1945735774.12;
+  private static final double SCALE_12 = 7600530.36765;
+
   @Override
   public List<Feature> getFeatures(double lBox, double rBox, double bBox, double tBox, long timestampMillis) {
 
@@ -38,7 +41,9 @@ public class GeoHandler implements GeolocationService.Iface {
 
     // Determine Necessary Level
     double area = rect.area() * S2LatLng.EARTH_RADIUS_METERS * S2LatLng.EARTH_RADIUS_METERS;
-    int level = 16;
+    int level = 12;
+    if (area / SCALE_12 > 4d) level = 8;
+    if (area / SCALE_8 > 4d) level = 4;
 
     // Get Cells Covering Area
     ArrayList<S2CellId> cells = new ArrayList<>();
@@ -57,10 +62,6 @@ public class GeoHandler implements GeolocationService.Iface {
     Session session = Database.getSession();
     PreparedStatement statement = Database.prepareFromCache(
       "SELECT unixTimestampOf(time) AS time_unix, json, osm_id FROM global.slave WHERE level=? AND s2_id=? AND time >= ?");
-
-    // Historical Query info
-    // System.out.println(timestampMillis);
-    // mintimeuuid: YYYY-MM-DD hh:mm+____
 
     // Execute the Query
     for (S2CellId cell : cells) {

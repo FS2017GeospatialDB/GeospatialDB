@@ -188,6 +188,7 @@ def slicePolygon(polygonJsonParam, level):
 	result = {}
 	for line in lines:
 		clockwise = isClockwise(line)
+		print "clockwise!" if clockwise else "counterclockwise!"
 		lineStringJson['geometry']['coordinates'] = line
 		lineLocations = sliceLineString(lineStringJson, level, clockwise)
 

@@ -83,7 +83,7 @@ public class Server {
       // Handle "service" Requests
       String target = request.getRequestLine().getUri();
       if (target.startsWith("/service") && method.equals("POST")) {
-       
+        System.out.println((new java.util.Date()) + ": Incoming request => " + target);
         HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
         byte[] entityContent = EntityUtils.toByteArray(entity);
           
@@ -168,7 +168,6 @@ public class Server {
               // Set up HTTP connection
               Socket socket = this.httpServerSocket.accept();
               DefaultHttpServerConnection conn = new DefaultHttpServerConnection();
-              System.out.println("Incoming connection from " + socket.getInetAddress());
               conn.bind(socket, this.params);
 
               // Start worker thread

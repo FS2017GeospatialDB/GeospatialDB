@@ -10,7 +10,7 @@ import cassandra
 from cassandra.cluster import Cluster
 
 # Setup Logging
-logging.basicConfig(filename="/var/tmp/load_features.log", level=logging.INFO)
+logging.basicConfig(filename="/var/tmp/load_features.log", filemode="w", level=logging.INFO)
 
 # Print Usage Instructions
 def printUsageAndExit(statusCode):
@@ -35,6 +35,7 @@ def load(fileList):
         try:
             cluster = Cluster([host])
             session = cluster.connect('global')
+            break
         except:
             logging.info("Failed to connect to host %s...", host)
     
@@ -50,8 +51,8 @@ def load(fileList):
         INSERT INTO master (osm_id, json) VALUES (?, ?)
     ''')
     slave_insert_ps = session.prepare('''
-        INSERT INTO slave(level, s2_id, time, osm_id, json)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO slave(level, s2_id, time, osm_id, is_cut, json)
+        VALUES (?, ?, ?, ?, ?, ?)
     ''')
 
     # Read the JSONs
@@ -76,7 +77,7 @@ def load(fileList):
                         # Check if ID already exists
                         if session.execute(master_select_ps, (osm_id,)):
                             logging.info("ID %s already exists in database. Skipping...", osm_id)
-                            continue
+                            break
 
                         # Insert Feature into Master
                         logging.info("Inserting %s into Master...", osm_id)
@@ -85,14 +86,14 @@ def load(fileList):
 
                         # Insert Feature into Slave
                         logging.info("Inserting %s into Slave...", osm_id)
-                        level = 8
-                        pieces = slice.sliceJson(feature, level)
-                        for cellID,cellJson in pieces.items():
-                            cellID = (cellID + 2**63) % 2**64 - 2**63                       # Convert to 64-bit Signed Integer
-                            cellJson = json.dumps(cellJson)
-                            
-                            session.execute(slave_insert_ps, (level, cellID, cassandra.util.uuid_from_time(int(time.time()), 0, 0), osm_id))
-                            session.execute(slave_insert_ps, (level, cellID, cassandra.util.HIGHEST_TIME_UUID, osm_id, cellJson))
+                        for level in [4, 8, 12]:
+                            pieces = slice.sliceJson(feature, level)
+                            for cellID,cellJson in pieces.items():
+                                cellID = (cellID + 2**63) % 2**64 - 2**63                       # Convert to 64-bit Signed Integer
+                                cellJson = json.dumps(cellJson)
+                                
+                                session.execute(slave_insert_ps, (level, cellID, cassandra.util.uuid_from_time(int(time.time()), 0, 0), osm_id, True))
+                                session.execute(slave_insert_ps, (level, cellID, cassandra.util.HIGHEST_TIME_UUID, osm_id, True, cellJson))
                         success = True
 
                     except:
@@ -123,7 +124,7 @@ def jsonItems(file, prefix):
                 yield builder.value
     except StopIteration:
         pass
-        
+
 if __name__ == '__main__':
 
     # Check Command-Line Arguments
