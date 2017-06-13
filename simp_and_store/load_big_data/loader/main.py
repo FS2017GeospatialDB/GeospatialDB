@@ -92,7 +92,7 @@ def run(file_list):
         with open(filename, 'r') as file:
             #features = load_geojson(filename)['features']
             print 'Storing to database...'
-            for feature in jsonItems(file, 'features.item')
+            for feature in jsonItems(file, 'features.item'):
                 start = timer()
                 
                 load_into_master(feature)
