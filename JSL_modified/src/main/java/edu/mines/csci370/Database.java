@@ -1,13 +1,13 @@
 package edu.mines.csci370;
 
-import java.util.Map;
+import com.datastax.driver.core.*;
+
 import java.util.HashMap;
+import java.util.Map;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.PreparedStatement;
-
+@SuppressWarnings("WeakerAccess")
 public class Database {
+    private static Database __ = new Database();
     private static Cluster _cluster;
     private static Session _session;
     private static Map<String, PreparedStatement> _cache = new HashMap<>();
@@ -15,16 +15,19 @@ public class Database {
     /**
      * Disable Direct Instantiation
      */
-    private Database() {}
+    private Database() {initialize();}
 
     /**
      * Initialize the DB connection.
      */
-    public static void initialize() {
+    private static void initialize() {
+        PoolingOptions poolingOptions = new PoolingOptions();
+        poolingOptions
+                .setConnectionsPerHost(HostDistance.LOCAL, 2, 8);
         _cluster = Cluster.builder()
-            .addContactPoints("127.0.0.1")
-            .build();
-
+                .withPoolingOptions(poolingOptions)
+                .addContactPoints("127.0.0.1")
+                .build();
         _session = _cluster.connect();
     }
 
@@ -35,12 +38,16 @@ public class Database {
         return _session;
     }
 
+    public static Cluster getCluster() {return _cluster;}
+
     /**
-     * Cleanup the DB connection.
+     * Prepare a statement (or retrieve it from the cache).
      */
-    public static void cleanup() {
-        if (_cluster != null)
-            _cluster.close();
+    public static PreparedStatement prepareFromCache(String statement) {
+        if (_cache.containsKey(statement))
+            return _cache.get(statement);
+        _cache.put(statement, _session.prepare(statement));
+        return _cache.get(statement);
     }
 
     /**
@@ -51,16 +58,5 @@ public class Database {
         super.finalize();
         if (_cluster != null)
             _cluster.close();
-    }
-
-    /**
-     * Prepare a statement (or retrieve it from the cache).
-     */
-    public static PreparedStatement prepareFromCache(String statement) {
-        if (_cache.containsKey(statement))
-            return _cache.get(statement);
-
-        _cache.put(statement, _session.prepare(statement));
-        return _cache.get(statement);
     }
 }

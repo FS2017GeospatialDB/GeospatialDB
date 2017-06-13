@@ -44,8 +44,6 @@ public class Server {
 	private static GeolocationService.Processor processor;
 
 	public static void main(String[] args) {
-		Database.initialize();
-		
     try {
       Thread t = new RequestListenerThread(8000);
       t.setDaemon(false);
