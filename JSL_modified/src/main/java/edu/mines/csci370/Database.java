@@ -44,6 +44,16 @@ public class Database {
     }
 
     /**
+     * Auto cleanup the DB connection
+     */
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+        if (_cluster != null)
+            _cluster.close();
+    }
+
+    /**
      * Prepare a statement (or retrieve it from the cache).
      */
     public static PreparedStatement prepareFromCache(String statement) {
