@@ -72,7 +72,7 @@ def insert_by_bboxes(bboxes, feature, highest_timestamp=True):
 def insert_by_cut_feature(cut_feature_set):
     '''Given the cut feature dictionary, insert pieces to the corresponding place'''
     for cellid, feature in cut_feature_set.iteritems():
-        insert_by_covering(S2CellId(cellid), feature, True)
+        insert_by_covering(S2CellId(cellid), feature, True, True)
 
 
 def __initialize():
