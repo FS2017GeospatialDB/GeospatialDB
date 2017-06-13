@@ -18,14 +18,26 @@ CLUSTER_LIST = CFG['list of node']
 KEYSPACE = CFG['key space']
 CLUSTER = Cluster(CLUSTER_LIST)
 SESSION = CLUSTER.connect(KEYSPACE)
-PS_INSERT = '''
-INSERT INTO slave (level, s2_id, time, osm_id, json, is_cut) VALUES (?, ?, ?, ?, ?, ?)'''
+PS_INSERT = '''INSERT INTO slave (level, s2_id, time, osm_id, json, is_cut) VALUES (?, ?, ?, ?, ?, ?)'''
+PS_QUERY_MASTER = '''SELECT json from master where osm_id = ?'''
+PS_NEW_MASTER = '''INSERT INTO master (osm_id, json) values (?,?)'''
+PS_MODIFY_MASTER = '''UPDATE master set json = ? where osm_id = ?'''
+PS_DELETE_MASTER = '''DELETE FROM master where osm_id = ?'''
+PS_DELETE_SLAVE = '''DELETE FROM SLAVE where level = ? and s2_id = ? and time = ? and osm_id = ?  '''
+
 PREPARED_INSERT = SESSION.prepare(PS_INSERT)
 
+def execute(statement, arguments):
+    SESSION.execute(statement, arguments)
 
-def to_64bit(number):
+def to_64bit(number): 
     '''wrap-up for c type long'''
     return ctypes.c_long(number).value
+
+def get_feature_from_master(osm_id):
+    result = SESSION.execute(PS_QUERY_MASTER, (osm_id,))
+    for row in result:
+        return row.json
 
 def insert_feature_raw(cell_level, cell_s2_id, timestamp, osm_id, feature_str, is_cut):
     insert_by_covering.handle = SESSION.execute_async(

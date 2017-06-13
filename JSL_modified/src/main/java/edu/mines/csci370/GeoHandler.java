@@ -17,11 +17,7 @@ import org.geotools.geometry.jts.JTSFactoryFinder;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.TreeMap;
-import java.util.HashSet;
+import java.util.*;
 
 public class GeoHandler implements GeolocationService.Iface {
     private static int OFFSET = 2;
@@ -147,7 +143,7 @@ public class GeoHandler implements GeolocationService.Iface {
                 Feature feature = featureMap.get(level).get(i);
                 String osmId = osmIdMap.get(level).get(i);
                 System.out.println(osmId);
-                if (osmId.equals("way/33113233")){
+                if (osmId.equals("way/33113233")) {
                     System.out.println(feature.json);
                 }
                 if (!holder.containsKey(osmId)) {
@@ -181,29 +177,29 @@ public class GeoHandler implements GeolocationService.Iface {
 
         return result;
     }
-    
-    private List<Feature> justDupeMethod(TreeMap<Integer, ArrayList<Feature>> featureMap, 
-    		TreeMap<Integer, ArrayList<String>> osmIdMap) {
-    	HashMap<String, HashSet<Feature>> resultMap = new HashMap<>();
-    	for (int level : featureMap.keySet()) {
-    		for (int i = 0; i < featureMap.get(level).size(); i++) {
-    			Feature feature = featureMap.get(level).get(i);
-    			String osmId = osmIdMap.get(level).get(i);
-    			if (!resultMap.containsKey(osmId)) {
-    				resultMap.put(osmId, new HashSet<>());
-    			}
-    			resultMap.get(osmId).add(feature);
-    		}			
-    	}
-    	
-    	// Adding all unique features to results array
-    	ArrayList<Feature> results = new ArrayList<>();
-    	for (String osmId : resultMap.keySet()) {
-    		for (Feature feature : resultMap.get(osmId)) {
-    			results.add(feature);
-    		}
-    	}
-    	return results;
+
+    private List<Feature> justDupeMethod(TreeMap<Integer, ArrayList<Feature>> featureMap,
+                                         TreeMap<Integer, ArrayList<String>> osmIdMap) {
+        HashMap<String, HashSet<Feature>> resultMap = new HashMap<>();
+        for (int level : featureMap.keySet()) {
+            for (int i = 0; i < featureMap.get(level).size(); i++) {
+                Feature feature = featureMap.get(level).get(i);
+                String osmId = osmIdMap.get(level).get(i);
+                if (!resultMap.containsKey(osmId)) {
+                    resultMap.put(osmId, new HashSet<>());
+                }
+                resultMap.get(osmId).add(feature);
+            }
+        }
+
+        // Adding all unique features to results array
+        ArrayList<Feature> results = new ArrayList<>();
+        for (String osmId : resultMap.keySet()) {
+            for (Feature feature : resultMap.get(osmId)) {
+                results.add(feature);
+            }
+        }
+        return results;
     }
 
     private List<Feature> combineMethodResults(TreeMap<Integer, ArrayList<Feature>> featureMap, TreeMap<Integer, ArrayList<String>> osmIdMap) {
@@ -253,7 +249,7 @@ public class GeoHandler implements GeolocationService.Iface {
         // Lookup the Cells in the Database
         Session session = Database.getSession();
         PreparedStatement statement = Database.prepareFromCache(
-                "SELECT unixTimestampOf(time) AS time_unix, osm_id, is_cut, json FROM global.slave WHERE level=? AND s2_id=? AND time >= ?");
+                "SELECT unixTimestampOf(time) AS time_unix, osm_id, json FROM global.slave WHERE level=? AND s2_id=? AND time >= ?");
 
         TreeMap<Integer, ArrayList<Feature>> featureMap = new TreeMap<Integer, ArrayList<Feature>>();
         TreeMap<Integer, ArrayList<String>> osmIdMap = new TreeMap<Integer, ArrayList<String>>();
@@ -326,33 +322,41 @@ public class GeoHandler implements GeolocationService.Iface {
         return results;
     }
 
+
+    @Override
     public String updateFeature(String id, String feature) {
         if (id.equals("new")) { // new feature
-            // make new osm_id
-            id="way/10000000";
+            // make new osm_id based on timestamp
+            id = Long.toString(System.currentTimeMillis());
 
-            Session session = Database.getSession();
-            PreparedStatement statement = Database.prepareFromCache(
-                    "INSERT INTO global.master(osm_id, json) VALUES(?, ?)");
-            session.execute(statement.bind(id, feature));
+            // insert into slave/master by calling python script
+            try {
+                ProcessBuilder pb = new ProcessBuilder("python", "jsl.py", id, feature, "new");
+                Process p = pb.start();
+            } catch (IOException e) {
+                System.out.println(e);
+            }
         } else {
-            Session session = Database.getSession();
-            PreparedStatement statement = Database.prepareFromCache(
-                    "UPDATE global.master SET json=? WHERE osm_id=?");
-            session.execute(statement.bind(feature, id));
+            // insert into slave/master by calling python script
+            try {
+                ProcessBuilder pb = new ProcessBuilder("python", "jsl.py", id, feature, "modify");
+                Process p = pb.start();
+            } catch (IOException e) {
+                System.out.println(e);
+            }
         }
         return id;
     }
 
+    @Override
     public String deleteFeature(String id) {
-        Session session = Database.getSession();
-        PreparedStatement statement = Database.prepareFromCache(
-                "DELETE FROM global.master WHERE osm_id=?");
-        session.execute(statement.bind(id));
+        // delete from slave/master by calling python script
+        try {
+            ProcessBuilder pb = new ProcessBuilder("python", "jsl.py", id, "", "delete");
+            Process p = pb.start();
+        } catch (IOException e) {
+            System.out.println(e);
+        }
         return id;    // success...
     }
 }
-
-
-
-
