@@ -40,10 +40,11 @@ import org.apache.thrift.TProcessor;
 
 public class Server {
 
-	private static GeoHandler handler;
-	private static GeolocationService.Processor processor;
+  private static GeoHandler handler;
+  private static GeolocationService.Processor processor;
 
-	public static void main(String[] args) {
+  public static void main(String[] args) {
+    Database.getCluster();
     try {
       Thread t = new RequestListenerThread(8000);
       t.setDaemon(false);

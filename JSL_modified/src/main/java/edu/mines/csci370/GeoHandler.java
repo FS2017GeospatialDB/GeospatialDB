@@ -17,7 +17,9 @@ import org.geotools.geometry.jts.JTSFactoryFinder;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.io.File;
 import java.util.*;
+import java.net.URISyntaxException;
 
 public class GeoHandler implements GeolocationService.Iface {
     private static int OFFSET = 2;
@@ -202,11 +204,12 @@ public class GeoHandler implements GeolocationService.Iface {
         return results;
     }
 
-    private List<Feature> combineMethodResults(HashMap<Integer, HashMap<String, Feature>> featureMap) {
+    private List<Feature> combineMethodResults(HashMap<Long, HashMap<String, Feature>> featureMap) {
+        // TODO: FIX! this function is disregarding the smaller part of cut features
         List<Feature> results;
         HashMap<String, Feature> resultMap = new HashMap<>();
-        for (int level : featureMap.keySet()) {
-            HashMap<String, Feature> features = featureMap.get(level);
+        for (long s2_id : featureMap.keySet()) {
+            HashMap<String, Feature> features = featureMap.get(s2_id);
             for (String id : features.keySet()) {
                 Feature f = features.get(id);
 		if (f.getJson() == null) continue;
@@ -242,7 +245,7 @@ public class GeoHandler implements GeolocationService.Iface {
         PreparedStatement statement = Database.prepareFromCache(
                 "SELECT unixTimestampOf(time) AS time_unix, osm_id, json FROM global.slave WHERE level=? AND s2_id=? AND time>=?");
 
-        HashMap<Integer, HashMap<String, Feature>> featureMap = new HashMap<Integer, HashMap<String, Feature>>();
+        HashMap<Long, HashMap<String, Feature>> featureMap = new HashMap<Long, HashMap<String, Feature>>();
 
         int coveringCounter = 0;
         int featureCounter = 0;
@@ -263,9 +266,9 @@ public class GeoHandler implements GeolocationService.Iface {
                         features.put(id, f);
                     }
                 }
-            }
-	    if (!features.isEmpty()) {
-                featureMap.put(level, features);
+	        if (!features.isEmpty()) {
+                    featureMap.put(cell.id(), features);
+                }
             }
         }
         System.out.println("Contains: " + featureCounter + " features");
@@ -325,17 +328,36 @@ public class GeoHandler implements GeolocationService.Iface {
 
             // insert into slave/master by calling python script
             try {
-                ProcessBuilder pb = new ProcessBuilder("python2.7", "jsl.py", id, feature, "new");
-                System.out.println(feature);
+                // TODO FIX THE ADDRESS FOR PYTHON 2.7 (Also in update and delete)
+                ProcessBuilder pb = new ProcessBuilder("/usr/bin/python2.7", "jsl.py", id, feature, "new");
+                String path = "";
+                try {
+                  path = (new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())).getParent().toString();
+                } catch (URISyntaxException e) {
+                  path = getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
+                  path = path.substring(0, path.lastIndexOf("/"));
+                } finally {
+                  path = path.substring(0, path.lastIndexOf("/")) + "/src/py_interface/";
+                  pb.directory(new File(path));
+                }
                 Process p = pb.start();
             } catch (IOException e) {
                 System.out.println(e);
             }
-        } else {
+        } else { // updating feature
             // insert into slave/master by calling python script
             try {
-                ProcessBuilder pb = new ProcessBuilder("python2.7", "jsl.py", id, feature, "modify");
-                System.out.println(feature);
+                ProcessBuilder pb = new ProcessBuilder("/usr/bin/python2.7", "jsl.py", id, feature, "modify");
+                String path = "";
+                try {
+                  path = (new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())).getParent().toString();
+                } catch (URISyntaxException e) {
+                  path = getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
+                  path = path.substring(0, path.lastIndexOf("/"));
+                } finally {
+                  path = path.substring(0, path.lastIndexOf("/")) + "/src/py_interface/";
+                  pb.directory(new File(path));
+                }
                 Process p = pb.start();
             } catch (IOException e) {
                 System.out.println(e);
@@ -348,7 +370,17 @@ public class GeoHandler implements GeolocationService.Iface {
     public String deleteFeature(String id) {
         // delete from slave/master by calling python script
         try {
-            ProcessBuilder pb = new ProcessBuilder("python", "jsl.py", id, "", "delete");
+            ProcessBuilder pb = new ProcessBuilder("/usr/bin/python2.7", "jsl.py", id, "", "delete");
+            String path = "";
+            try {
+              path = (new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())).getParent().toString();
+            } catch (URISyntaxException e) {
+              path = getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
+              path = path.substring(0, path.lastIndexOf("/"));
+            } finally {
+              path = path.substring(0, path.lastIndexOf("/")) + "/src/py_interface/";
+              pb.directory(new File(path));
+            }
             System.out.println(id);
             Process p = pb.start();
         } catch (IOException e) {

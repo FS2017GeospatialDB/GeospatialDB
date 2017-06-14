@@ -16,14 +16,14 @@ CFG = cfgparser.load_module('dbhelper')
 TRUNCATE_TABLE_WHEN_START = CFG['truncate table when start']
 CLUSTER_LIST = CFG['list of node']
 KEYSPACE = CFG['key space']
-CLUSTER = Cluster(CLUSTER_LIST, port=9041)
+CLUSTER = Cluster(CLUSTER_LIST)
 SESSION = CLUSTER.connect(KEYSPACE)
 PS_INSERT = '''INSERT INTO slave (level, s2_id, time, osm_id, json, is_cut) VALUES (?, ?, ?, ?, ?, ?)'''
 PS_QUERY_MASTER = '''SELECT json from master where osm_id = ?'''
 PS_NEW_MASTER = '''INSERT INTO master (osm_id, json) values (?,?)'''
 PS_MODIFY_MASTER = '''UPDATE master set json = ? where osm_id = ?'''
 PS_DELETE_MASTER = '''DELETE FROM master where osm_id = ?'''
-PS_DELETE_SLAVE = '''DELETE FROM SLAVE where level = ? and s2_id = ? and time = ? and osm_id = ?  '''
+PS_DELETE_SLAVE = '''DELETE FROM SLAVE where level = ? and s2_id = ? and time = ? and is_cut=? and osm_id = ?  '''
 
 PREPARED_INSERT = SESSION.prepare(PS_INSERT)
 

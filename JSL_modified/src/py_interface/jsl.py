@@ -33,7 +33,6 @@ if (PROCEDURE != 'delete'):
     # insert empty feature into the database @ current timestamp
     
 if PROCEDURE == 'new':
-    print "new"
     for BBOX in BBOXES:
         COVERINGS = geohelper.get_covering(BBOX)
         for S2CELL in COVERINGS:
@@ -61,7 +60,6 @@ if PROCEDURE == 'new':
     dbhelper.execute(dbhelper.PS_NEW_MASTER, (OSM_ID, JSON_STR))
 elif PROCEDURE == 'modify':
     OLD_JSON_STR = dbhelper.get_feature_from_master(OSM_ID)
-    #OLD_JSON = geojson.dumps(OLD_JSON_STR)
     for BBOX in BBOXES:
         COVERINGS = geohelper.get_covering(BBOX)
         for S2CELL in COVERINGS:
@@ -89,13 +87,14 @@ elif PROCEDURE == 'modify':
     dbhelper.execute(dbhelper.PS_MODIFY_MASTER, (JSON_STR, OSM_ID))
 elif PROCEDURE == 'delete':
     OLD_JSON_STR = dbhelper.get_feature_from_master(OSM_ID)
-    OLD_JSON = geojson.dumps(OLD_JSON_STR)
+    OLD_JSON = geojson.loads(OLD_JSON_STR)
     PT_LIST = geohelper.get_pt_list(OLD_JSON)
     BBOXES = geohelper.get_bboxes(PT_LIST)
     for BBOX in BBOXES:
         COVERINGS = geohelper.get_covering(BBOX)
         for S2CELL in COVERINGS:
-            dbhelper.execute(dbhelper.PS_DELETE_SLAVE, (S2CELL.level(), S2CELL.id(), HIGHEST_TIME_UUID, OSM_ID))
+            dbhelper.execute(dbhelper.PS_DELETE_SLAVE, (S2CELL.level(), dbhelper.to_64bit(S2CELL.id()), HIGHEST_TIME_UUID, True, OSM_ID))
+            dbhelper.execute(dbhelper.PS_DELETE_SLAVE, (S2CELL.level(), dbhelper.to_64bit(S2CELL.id()), HIGHEST_TIME_UUID, False, OSM_ID))
             dbhelper.insert_feature_raw(
                 S2CELL.level(), S2CELL.id(), TIME_UUID(), OSM_ID, OLD_JSON_STR, False)
         n = geohelper.get_covering_level_from_bboxes(BBOXES)
@@ -113,7 +112,7 @@ elif PROCEDURE == 'delete':
             coverer.set_min_level(cutting_lv)
             covering = coverer.GetCovering(llrect)
             for S2CELL in covering:
-                dbhelper.execute(dbhelper.PS_DELETE_SLAVE, (S2CELL.level(), S2CELL.id(), HIGHEST_TIME_UUID, OSM_ID))
+                dbhelper.execute(dbhelper.PS_DELETE_SLAVE, (S2CELL.level(), dbhelper.to_64bit(S2CELL.id()), HIGHEST_TIME_UUID, OSM_ID))
                 dbhelper.insert_feature_raw(
                     S2CELL.level(), S2CELL.id(), TIME_UUID(), OSM_ID, OLD_JSON_STR, False)
     dbhelper.execute(dbhelper.PS_DELETE_MASTER, (OSM_ID, ))
