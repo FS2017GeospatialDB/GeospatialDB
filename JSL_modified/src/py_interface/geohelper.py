@@ -4,7 +4,6 @@ import math
 import geojson
 from s2 import *
 import kAvgDiag
-import kAvgArea
 import cfgparser
 
 # pre-define the base and max level of the s2 covering.
@@ -133,45 +132,45 @@ def get_pt_list(feature):
     return geojson.utils.coords(feature)
 
 
-def get_coverer_bad(bbox):
-    '''BAD FUNCTION!!! THIS FUNCTION IS BROKEN, DO NOT UES.
-    Given the boundary box, find the most reasonable region coverer of the area'''
-    top_left = bbox[0]
-    bottom_right = bbox[1]
-    ll_top_left = S2LatLng.FromDegrees(top_left[0], top_left[1])
-    ll_bottom_right = S2LatLng.FromDegrees(bottom_right[0], bottom_right[1])
-    # digonal_distance = ll_top_left.GetDistance(ll_bottom_right).abs()
-
-    # According to the official documentation of S2, S2LatLngRect(&p, &p)
-    # specifies the first point as the lower-left coner. As we didn't follow
-    # the specification strictly in our earlier function, the only solution is
-    # to use another constructor to initialize the llrect
-    llrect = S2LatLngRect.FromPointPair(ll_top_left, ll_bottom_right)
-    level = kAvgArea.get_min_lv(llrect.Area())
-    parent = level - 1 if level != 0 else 0
-    # center = llrect.GetCenter()
-
-    # Giving up on coverer. The covering algorith is a top-down algorithm, which oftentimes
-    # returns undesired result if the given max cell is too low. The tables shows the result
-    # At each level. For the detailed information, see the comment in the official source code:
-    # https://github.com/micolous/s2-geometry-library/blob/master/geometry/s2/s2regioncoverer.h
-    # max_cells:        3      4     5     6     8    12    20   100   1000
-    # median ratio:  5.33   3.32  2.73  2.34  1.98  1.66  1.42  1.11   1.01
-    # worst case:  215518  14.41  9.72  5.26  3.91  2.75  1.92  1.20   1.02
-
-    coverer = S2RegionCoverer()
-    coverer.set_max_cells(4)
-    coverer.set_max_level(level)
-    coverer.set_min_level(parent)
-    covering = coverer.GetCovering(llrect)
-    if len(covering) > 50:
-        print 'level =', level, '\tparent =', parent
-        print '#covering =', len(covering)
-
-    try:
-        assert level > 8
-    except AssertionError:
-        print 'Encountered a feature with level < 8'
+#def get_coverer_bad(bbox):
+#    '''BAD FUNCTION!!! THIS FUNCTION IS BROKEN, DO NOT UES.
+#    Given the boundary box, find the most reasonable region coverer of the area'''
+#    top_left = bbox[0]
+#    bottom_right = bbox[1]
+#    ll_top_left = S2LatLng.FromDegrees(top_left[0], top_left[1])
+#    ll_bottom_right = S2LatLng.FromDegrees(bottom_right[0], bottom_right[1])
+#    # digonal_distance = ll_top_left.GetDistance(ll_bottom_right).abs()
+#
+#    # According to the official documentation of S2, S2LatLngRect(&p, &p)
+#    # specifies the first point as the lower-left coner. As we didn't follow
+#    # the specification strictly in our earlier function, the only solution is
+#    # to use another constructor to initialize the llrect
+#    llrect = S2LatLngRect.FromPointPair(ll_top_left, ll_bottom_right)
+#    level = kAvgArea.get_min_lv(llrect.Area())
+#    parent = level - 1 if level != 0 else 0
+#    # center = llrect.GetCenter()
+#
+#    # Giving up on coverer. The covering algorith is a top-down algorithm, which oftentimes
+#    # returns undesired result if the given max cell is too low. The tables shows the result
+#    # At each level. For the detailed information, see the comment in the official source code:
+#    # https://github.com/micolous/s2-geometry-library/blob/master/geometry/s2/s2regioncoverer.h
+#    # max_cells:        3      4     5     6     8    12    20   100   1000
+#    # median ratio:  5.33   3.32  2.73  2.34  1.98  1.66  1.42  1.11   1.01
+#    # worst case:  215518  14.41  9.72  5.26  3.91  2.75  1.92  1.20   1.02
+#
+#    coverer = S2RegionCoverer()
+#    coverer.set_max_cells(4)
+#    coverer.set_max_level(level)
+#    coverer.set_min_level(parent)
+#    covering = coverer.GetCovering(llrect)
+#    if len(covering) > 50:
+#        print 'level =', level, '\tparent =', parent
+#        print '#covering =', len(covering)
+#
+#    try:
+#        assert level > 8
+#    except AssertionError:
+#        print 'Encountered a feature with level < 8'
 
 
 def get_diag_distance(bbox):

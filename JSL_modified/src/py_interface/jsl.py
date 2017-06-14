@@ -23,16 +23,17 @@ if len(sys.argv) != 4:
 OSM_ID = sys.argv[1]
 JSON_STR = sys.argv[2] 
 PROCEDURE = sys.argv[3]
-JSON = geojson.loads(JSON_STR)
-
+if (PROCEDURE != 'delete'):
+    JSON = geojson.loads(JSON_STR)
+    PT_LIST = geohelper.get_pt_list(JSON)
+    BBOXES = geohelper.get_bboxes(PT_LIST)
 
 # new, modify, delete
 
-PT_LIST = geohelper.get_pt_list(JSON)
-BBOXES = geohelper.get_bboxes(PT_LIST)
     # insert empty feature into the database @ current timestamp
     
 if PROCEDURE == 'new':
+    print "new"
     for BBOX in BBOXES:
         COVERINGS = geohelper.get_covering(BBOX)
         for S2CELL in COVERINGS:
@@ -88,7 +89,9 @@ elif PROCEDURE == 'modify':
     dbhelper.execute(dbhelper.PS_MODIFY_MASTER, (JSON_STR, OSM_ID))
 elif PROCEDURE == 'delete':
     OLD_JSON_STR = dbhelper.get_feature_from_master(OSM_ID)
-    #OLD_JSON = geojson.dumps(OLD_JSON_STR)
+    OLD_JSON = geojson.dumps(OLD_JSON_STR)
+    PT_LIST = geohelper.get_pt_list(OLD_JSON)
+    BBOXES = geohelper.get_bboxes(PT_LIST)
     for BBOX in BBOXES:
         COVERINGS = geohelper.get_covering(BBOX)
         for S2CELL in COVERINGS:
