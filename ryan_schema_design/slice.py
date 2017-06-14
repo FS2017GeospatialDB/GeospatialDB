@@ -133,10 +133,10 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 				fakeS,fakeT = get_st_for_face(nextCell.face(), get_xyz(s2sphere.CellId.from_face_ij(face, i, j)))
 				fakePoint = s2sphere.CellId.from_face_ij(nextCell.face(), s2sphere.CellId.st_to_ij(fakeS), s2sphere.CellId.st_to_ij(fakeT))
 
-				result[lastCell.id()]['geometry']['coordinates'].append([fakePoint.to_lat_lng().lng().degrees, fakePoint.to_lat_lng().lat().degrees, 'EL' + decisionCode[0]])
+				result[lastCell.id()]['geometry']['coordinates'].append([fakePoint.to_lat_lng().lng().degrees, fakePoint.to_lat_lng().lat().degrees, ('EL' if clockwise else 'EE') + decisionCode[0]])
 				if not nextCell.id() in result:
 					result[nextCell.id()] = deepcopy(lineStringJson)
-				result[nextCell.id()]['geometry']['coordinates'].append([fakePoint.to_lat_lng().lng().degrees, fakePoint.to_lat_lng().lat().degrees, 'EE' + decisionCode[1]])
+				result[nextCell.id()]['geometry']['coordinates'].append([fakePoint.to_lat_lng().lng().degrees, fakePoint.to_lat_lng().lat().degrees, ('EE' if clockwise else 'EL') + decisionCode[1]])
 
 				# Wrap the Corner (if necessary)
 				if len(result[nextCell.id()]['geometry']['coordinates']) > 1:
@@ -150,6 +150,11 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 				result[cell.id()]['geometry']['coordinates'].append([point.to_lat_lng().lng().degrees, point.to_lat_lng().lat().degrees])
 				lastPoint = point
 				success = True
+
+	# Handle Flipped Lines
+	for location in result:
+		if not clockwise:
+			result[location]['geometry']['coordinates'] = result[location]['geometry']['coordinates'][::-1]
 
 	return result
 
@@ -188,24 +193,22 @@ def slicePolygon(polygonJsonParam, level):
 	result = {}
 	for line in lines:
 		clockwise = isClockwise(line)
-		print "clockwise!" if clockwise else "counterclockwise!"
 		lineStringJson['geometry']['coordinates'] = line
 		lineLocations = sliceLineString(lineStringJson, level, clockwise)
 
 		for location in lineLocations.keys():
 			if not location in result.keys():
 				result[location] = deepcopy(polygonJson)
-			result[location]['geometry']['coordinates'].append([])
-			result[location]['geometry']['coordinates'][-1].extend(lineLocations[location]['geometry']['coordinates'])
+			result[location]['geometry']['coordinates'].append(lineLocations[location]['geometry']['coordinates'])
 
 	for location in result:
-		for lineNum, line in enumerate(result[location]['geometry']['coordinates']):
+		for lineNum,line in enumerate(result[location]['geometry']['coordinates']):
 			for pointNum,point in enumerate(line):
 				if len(point) == 3:
 
 					# Entering Polygon, Round the Corner
 					if point[2][1] == 'E' and pointNum != 0:
-						newPoints = wrapCorner(location, clockwise, line[pointNum-1][2], line[pointNum][2])
+						newPoints = wrapCorner(location, True, line[pointNum-1][2], line[pointNum][2])
 						if newPoints != None:
 							line[pointNum:pointNum] = newPoints
 
@@ -215,7 +218,7 @@ def slicePolygon(polygonJsonParam, level):
 
 			# Check if result[location] is not closed
 			if line[0] != line[-1]:
-				newPoints = wrapCorner(location, clockwise, line[-1][2], line[0][2])
+				newPoints = wrapCorner(location, True, line[-1][2], line[0][2])
 				if newPoints != None:
 					line.extend(newPoints)
 				line.append(line[0])
