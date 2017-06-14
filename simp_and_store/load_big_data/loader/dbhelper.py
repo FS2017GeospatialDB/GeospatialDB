@@ -84,7 +84,7 @@ def insert_master(feature):
     typee = feature['geometry']['type']
     osm_id = typee + "/" + oid
     
-    SESSION.execute(PREPARED_MASTER_INSERT, (osm_id, geojson.dumps(feature)))
+    insert_master.handle = SESSION.execute_async(PREPARED_MASTER_INSERT, (osm_id, geojson.dumps(feature)))
 
 def __initialize():
     '''DO NOT CALL THIS FUNCTION. Initializing the module. '''
@@ -101,6 +101,8 @@ def __before_exit():
             insert_by_covering.handle0.result()
         elif insert_by_covering.handle1 is not None:
             insert_by_covering.handle1.result()
+	elif insert_master.handle is not None:
+	    insert_master.handle.result()
     CLUSTER.shutdown()
 
 
@@ -109,6 +111,7 @@ def __before_exit():
 ##############  INITIALIZE ################
 insert_by_covering.handle0 = None
 insert_by_covering.handle1 = None
+insert_master.handle = None
 connect_to_cluster()
 atexit.register(__before_exit)
 __initialize()

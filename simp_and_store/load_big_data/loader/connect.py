@@ -4,6 +4,6 @@ def connect_to(list):
     for node in list:
         try:
             CLUSTER = Cluster([node])
+	    return CLUSTER
         except:
             pass
-	return CLUSTER
