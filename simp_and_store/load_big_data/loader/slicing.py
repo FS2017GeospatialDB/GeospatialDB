@@ -20,6 +20,8 @@ def slice_feature(json, level):
 			feature_set = sliceMultiPoint(json, level)
 		elif geo_type == 'LineString':
 			feature_set = sliceLineString(json, level)
+		elif geo_type == 'MultiLineString':
+			feature_set = sliceMultiLineString(json, level)
 		elif geo_type == 'Polygon':
 			feature_set = slicePolygon(json, level)
 		elif geo_type == 'MultiPolygon':
@@ -141,30 +143,11 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 				face,i,j = lastCell.face(), s2sphere.CellId.st_to_ij((decision * (s4 - s3)) + s3), s2sphere.CellId.st_to_ij((decision * (t4 - t3)) + t3)
 				fakeS,fakeT = get_st_for_face(nextCell.face(), get_xyz(s2sphere.CellId.from_face_ij(face, i, j)))
 				fakePoint = s2sphere.CellId.from_face_ij(nextCell.face(), s2sphere.CellId.st_to_ij(fakeS), s2sphere.CellId.st_to_ij(fakeT))
-				if DEBUG_PRINT:
-					if decision == rightT:
-						print "Right!\t",
-					elif decision == leftT:
-						print "Left!\t",
-					elif decision == upT:
-						print "Up!\t",
-					elif decision == downT:
-						print "Down!\t",
-					print lastCell.id(), nextCell.id()			
-				
-				"""
-				print leftT, rightT, upT, downT
-				print "Box: ", min(cs1, cs2), min(ct1, ct2), max(cs1, cs2), max(ct1, ct2)
-				print "Current: ", s3, t3
-				print "Target: ", s4, t4
-				print "Fake Point: ", fakePoint.to_lat_lng()
-				print
-				"""
 
-				result[lastCell.id()]['geometry']['coordinates'].append([fakePoint.to_lat_lng().lng().degrees, fakePoint.to_lat_lng().lat().degrees, 'EL' + decisionCode[0]])
+				result[lastCell.id()]['geometry']['coordinates'].append([fakePoint.to_lat_lng().lng().degrees, fakePoint.to_lat_lng().lat().degrees, ('EL' if clockwise else 'EE') + decisionCode[0]])
 				if not nextCell.id() in result:
 					result[nextCell.id()] = deepcopy(lineStringJson)
-				result[nextCell.id()]['geometry']['coordinates'].append([fakePoint.to_lat_lng().lng().degrees, fakePoint.to_lat_lng().lat().degrees, 'EE' + decisionCode[1]])
+				result[nextCell.id()]['geometry']['coordinates'].append([fakePoint.to_lat_lng().lng().degrees, fakePoint.to_lat_lng().lat().degrees, ('EE' if clockwise else 'EL') + decisionCode[1]])
 
 				# Wrap the Corner (if necessary)
 				if len(result[nextCell.id()]['geometry']['coordinates']) > 1:
@@ -178,6 +161,11 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 				result[cell.id()]['geometry']['coordinates'].append([point.to_lat_lng().lng().degrees, point.to_lat_lng().lat().degrees])
 				lastPoint = point
 				success = True
+
+	# Handle Flipped Lines
+	for location in result:
+		if not clockwise:
+			result[location]['geometry']['coordinates'] = result[location]['geometry']['coordinates'][::-1]
 
 	return result
 
@@ -222,17 +210,16 @@ def slicePolygon(polygonJsonParam, level):
 		for location in lineLocations.keys():
 			if not location in result.keys():
 				result[location] = deepcopy(polygonJson)
-			result[location]['geometry']['coordinates'].append([])
-			result[location]['geometry']['coordinates'][-1].extend(lineLocations[location]['geometry']['coordinates'])
+			result[location]['geometry']['coordinates'].append(lineLocations[location]['geometry']['coordinates'])
 
 	for location in result:
-		for lineNum, line in enumerate(result[location]['geometry']['coordinates']):
+		for lineNum,line in enumerate(result[location]['geometry']['coordinates']):
 			for pointNum,point in enumerate(line):
 				if len(point) == 3:
 
 					# Entering Polygon, Round the Corner
 					if point[2][1] == 'E' and pointNum != 0:
-						newPoints = wrapCorner(location, clockwise, line[pointNum-1][2], line[pointNum][2])
+						newPoints = wrapCorner(location, True, line[pointNum-1][2], line[pointNum][2])
 						if newPoints != None:
 							line[pointNum:pointNum] = newPoints
 
@@ -242,11 +229,10 @@ def slicePolygon(polygonJsonParam, level):
 
 			# Check if result[location] is not closed
 			if line[0] != line[-1]:
-				newPoints = wrapCorner(location, clockwise, line[-1][2], line[0][2])
+				newPoints = wrapCorner(location, True, line[-1][2], line[0][2])
 				if newPoints != None:
 					line.extend(newPoints)
 				line.append(line[0])
-		
 
 	# Search for enclosed cells not listed here that need to be added
 	"""
@@ -517,7 +503,6 @@ def isClockwise(line):
 			if angle > lastAngle + math.pi:
 				delta -= 2 * math.pi
 			
-			#print "Last Angle: ",lastAngle,"\tNew Angle: ",angle,"\tDelta: ",delta
 			theta += delta
 			lastAngle = angle
 		lastPoint = point
