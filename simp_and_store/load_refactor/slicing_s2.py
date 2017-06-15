@@ -146,10 +146,10 @@ def sliceLineString(lineStringJson, level, clockwise = True):
                 fakeS, fakeT = get_st_for_face(nextCell.face(), get_xyz(S2CellId.FromFaceIJ(face, i, j)))
                 fakePoint = S2CellId.FromFaceIJ(nextCell.face(), S2CellId.STtoIJ(fakeS), S2CellId.STtoIJ(fakeT))
 
-                result[lastCell.id()]['geometry']['coordinates'].append([fakePoint.ToLatLng().lng().degrees, fakePoint.ToLatLng().lat().degrees, ('EL' if clockwise else 'EE') + decisionCode[0]])
+                result[lastCell.id()]['geometry']['coordinates'].append([fakePoint.ToLatLng().lng().degrees(), fakePoint.ToLatLng().lat().degrees(), ('EL' if clockwise else 'EE') + decisionCode[0]])
                 if not nextCell.id() in result:
                     result[nextCell.id()] = deepcopy(lineStringJson)
-                result[nextCell.id()]['geometry']['coordinates'].append([fakePoint.ToLatLng().lng().degrees, fakePoint.ToLatLng().lat().degrees, ('EE' if clockwise else 'EL') + decisionCode[1]])
+                result[nextCell.id()]['geometry']['coordinates'].append([fakePoint.ToLatLng().lng().degrees(), fakePoint.ToLatLng().lat().degrees(), ('EE' if clockwise else 'EL') + decisionCode[1]])
 
                 # Wrap the Corner (if necessary)
                 if len(result[nextCell.id()]['geometry']['coordinates']) > 1:
@@ -160,7 +160,7 @@ def sliceLineString(lineStringJson, level, clockwise = True):
                 lastCell, lastPoint = nextCell, fakePoint
 
             else:
-                result[cell.id()]['geometry']['coordinates'].append([point.ToLatLng().lng().degrees, point.ToLatLng().lat().degrees])
+                result[cell.id()]['geometry']['coordinates'].append([point.ToLatLng().lng().degrees(), point.ToLatLng().lat().degrees()])
                 lastPoint = point
                 success = True
 
@@ -310,7 +310,7 @@ def wrapCorner(s2_id, clockwise, start_code, end_code):
         nextEdge = sides[(start + delta) % len(sides)]
 
         latlng = getCornerLatLong(S2CellId(s2_id), curEdge, nextEdge)
-        result.append([latlng.lng().degrees, latlng.lat().degrees, 'C'+curEdge+nextEdge])
+        result.append([latlng.lng().degrees(), latlng.lat().degrees(), 'C'+curEdge+nextEdge])
 
         start = (start + delta) % len(sides)
     return result
