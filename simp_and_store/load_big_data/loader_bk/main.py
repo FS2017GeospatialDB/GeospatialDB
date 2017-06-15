@@ -87,7 +87,7 @@ def run(file_list):
                 load_into_master(feature)
                 load_by_duplication(feature)
                 load_by_cutting(feature)
-                
+
             end = timer()
             print 'Done!'
             print 'Storing to db finished in %.5fs' % (end - start)
