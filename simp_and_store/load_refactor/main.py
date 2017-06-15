@@ -88,6 +88,7 @@ def run(filename):
     print 'Storing to database...'
     start = timer()
     for feature in features:
+        dbhelper.insert_master(feature)
         load_by_duplication(feature)
         load_by_cutting(feature)
     end = timer()
