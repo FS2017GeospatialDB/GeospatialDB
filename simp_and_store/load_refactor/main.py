@@ -4,7 +4,7 @@
 
 import sys
 from timeit import default_timer as timer
-import geojson
+import ijson
 import dbhelper
 import geohelper
 import cfgparser
@@ -14,26 +14,13 @@ import slicing
 # For detailed program behavior tunning, goto config.yml
 RUN_DUPLICATION = False
 RUN_CUTTING = False
+LOAD_MASTER = False
 
 
 def print_usage(stat):
     '''Print the usage and exit'''
     print "Usage:", __file__, "spatialData.json\n"
     sys.exit(stat)
-
-
-def load_geojson(filename):
-    '''Given the filename, return the geojson obj'''
-    start = timer()
-    in_file = open(filename, 'r').read()
-    end = timer()
-    print 'Reading file finished in %.5fs' % (end - start)
-
-    start = timer()
-    obj = geojson.loads(in_file)
-    end = timer()
-    print 'Loading json finished in %.5fs' % (end - start)
-    return obj
 
 
 def load_by_duplication(feature):
@@ -80,29 +67,56 @@ def load_by_cutting(feature):
             dbhelper.insert_by_cut_feature(cut_feature)
 
 
-def run(filename):
-    '''Execute entrance. Given the geojson filename, load the file to the database'''
-    print 'Loading feature files...'
-    features = load_geojson(filename)['features']
-
-    print 'Storing to database...'
-    start = timer()
-    for feature in features:
+def load_into_master(feature):
+    '''Load the original copy of the feature into the master copy table'''
+    if LOAD_MASTER:
         dbhelper.insert_master(feature)
-        load_by_duplication(feature)
-        load_by_cutting(feature)
-    end = timer()
-    print 'Done!'
-    print 'Storing to db finished in %.5fs' % (end - start)
+
+
+def run(file_list):
+    '''Execute entrance. Given the list geojson filenames, load the files to the database'''
+    print 'Loading feature files...'
+    for filename in file_list:
+        with open(filename, 'r') as input_file:
+            print 'Storing to database...'
+            start = timer()
+            for feature in json_items(input_file, 'features.item'):
+                load_into_master(feature)
+                load_by_duplication(feature)
+                load_by_cutting(feature)
+            end = timer()
+            print 'Done!'
+            print 'Storing to db finished in %.5fs' % (end - start)
+
+
+def json_items(input_file, prefix):
+    '''By Ryan: rewrite the generator of the ijson library to overcome the
+    issue that floats are returned as decimals.'''
+    items = ijson.parse(input_file)
+    try:
+        while True:
+            current, event, value = next(items)
+            if current == prefix:
+                builder = ijson.common.ObjectBuilder()
+                end_event = event.replace('start', 'end')
+                while (current, event) != (prefix, end_event):
+                    if event == 'number':
+                        value = float(value)
+                    builder.event(event, value)
+                    current, event, value = next(items)
+                yield builder.value
+    except StopIteration:
+        pass
 
 
 def __load_config():
     cfg = cfgparser.load()
     global RUN_DUPLICATION
     global RUN_CUTTING
-    global CFG
+    global LOAD_MASTER
     RUN_DUPLICATION = cfg['main']['duplication method']
     RUN_CUTTING = cfg['main']['cutting method']
+    LOAD_MASTER = cfg['main']['load to master']
     load_by_cutting.base_level = cfg['geohelper']['base level']
 
 
@@ -112,4 +126,4 @@ __load_config()
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         print_usage(1)
-    run(sys.argv[1])
+    run(sys.argv[1:])

@@ -20,5 +20,6 @@ dbhelper:
   truncate table when start: false
 
 main:
+  load to master: true
   duplication method: true
   cutting method: true
