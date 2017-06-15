@@ -1,0 +1,7 @@
+# just too many copies of map.json, waste of spaces
+*.json
+*.geojson
+*.osm
+
+# python compile file
+*.pyc

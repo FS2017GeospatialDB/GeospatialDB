@@ -4,3 +4,9 @@
 [submodule "WebAppGeospatial"]
 	path = WebAppGeospatial
 	url = https://github.com/twalker1464/WebAppGeospatial.git
+[submodule "s2-geometry-library"]
+	path = s2-geometry-library
+	url = https://github.com/huhwang/s2-geometry-library.git
+[submodule "simp_and_store/load_big_data/loader"]
+	path = simp_and_store/load_big_data/loader
+	url = https://github.com/huhwang/GeospatialCassLoader.git
