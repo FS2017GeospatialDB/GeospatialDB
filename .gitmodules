@@ -4,3 +4,6 @@
 [submodule "WebAppGeospatial"]
 	path = WebAppGeospatial
 	url = https://github.com/twalker1464/WebAppGeospatial.git
+[submodule "s2-geometry-library"]
+	path = s2-geometry-library
+	url = https://github.com/huhwang/s2-geometry-library.git
