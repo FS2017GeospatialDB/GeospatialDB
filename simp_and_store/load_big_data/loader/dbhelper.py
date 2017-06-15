@@ -112,6 +112,5 @@ def __before_exit():
 insert_by_covering.handle0 = None
 insert_by_covering.handle1 = None
 insert_master.handle = None
-connect_to_cluster()
 atexit.register(__before_exit)
 __initialize()

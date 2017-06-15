@@ -23,20 +23,6 @@ def print_usage(stat):
     sys.exit(stat)
 
 
-def load_geojson(filename):
-    '''Given the filename, return the geojson obj'''
-    start = timer()
-    in_file = open(filename, 'r').read()
-    end = timer()
-    print 'Reading file finished in %.5fs' % (end - start)
-
-    start = timer()
-    obj = geojson.loads(in_file)
-    end = timer()
-    print 'Loading json finished in %.5fs' % (end - start)
-    return obj
-
-
 def load_by_duplication(feature):
     '''Using the duplication method to store features into the appoprate level.
     Function behavior is controlled by global variable RUN_DUPLICATION. Insertion
