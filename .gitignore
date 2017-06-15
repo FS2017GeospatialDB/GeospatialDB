@@ -3,11 +3,13 @@
 *.pbf
 *.json
 *.geojson
+
 JSL*/target
 JSL*/lib
-JSL*/.classpath
-JSL*/.project
-JSL*/.settings
+
+.classpath
+.project
+.settings
 
 .idea
 .vscode
