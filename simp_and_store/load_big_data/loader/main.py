@@ -11,6 +11,9 @@ import geohelper
 import cfgparser
 import slicing
 
+'''Only purpose is to track progress of loading'''
+from track import count
+
 # DON'T CHANGE THE VALUE HERE DIRECTLY! The value will be overwritten by cfgparser
 # For detailed program behavior tunning, goto config.yml
 RUN_DUPLICATION = False
@@ -79,16 +82,16 @@ def run(file_list):
         with open(filename, 'r') as file:
             #features = load_geojson(filename)['features']
             print 'Storing to database...'
+            start = timer()
             for feature in jsonItems(file, 'features.item'):
-                start = timer()
-
                 load_into_master(feature)
                 load_by_duplication(feature)
                 load_by_cutting(feature)
-
-                end = timer()
-                print 'Done!'
-                print 'Storing to db finished in %.5fs' % (end - start)
+                
+            end = timer()
+            print 'Done!'
+            print 'Storing to db finished in %.5fs' % (end - start)
+            count()
 
 
 def jsonItems(file, prefix):

@@ -144,10 +144,10 @@ public class GeoHandler implements GeolocationService.Iface {
             for (int i = 0; i < featureMap.get(level).size(); i++) {
                 Feature feature = featureMap.get(level).get(i);
                 String osmId = osmIdMap.get(level).get(i);
-                System.out.println(osmId);
-                if (osmId.equals("way/33113233")) {
-                    System.out.println(feature.json);
-                }
+//                System.out.println(osmId);
+//                if (osmId.equals("way/33113233")) {
+//                    System.out.println(feature.json);
+//                }
                 if (!holder.containsKey(osmId)) {
                     holder.put(osmId, new ArrayList<>());
                 }
@@ -243,7 +243,7 @@ public class GeoHandler implements GeolocationService.Iface {
         // Lookup the Cells in the Database
         Session session = Database.getSession();
         PreparedStatement statement = Database.prepareFromCache(
-                "SELECT unixTimestampOf(time) AS time_unix, osm_id, json FROM global.slave WHERE level=? AND s2_id=? AND time>=?");
+                "SELECT unixTimestampOf(time) AS time_unix, osm_id, json FROM global01.slave WHERE level=? AND s2_id=? AND time>=?");
 
         HashMap<Long, HashMap<String, Feature>> featureMap = new HashMap<Long, HashMap<String, Feature>>();
 
@@ -275,6 +275,7 @@ public class GeoHandler implements GeolocationService.Iface {
         System.out.println("Total covering processed: " + coveringCounter);
 
         long finish = System.currentTimeMillis();
+        System.out.println("Time taken: " + (finish - start));
         return combineMethodResults(featureMap);
         //return letMeMessUpThings(featureMap, osmIdMap);
         //return justDupeMethod(featureMap, osmIdMap);
@@ -285,7 +286,7 @@ public class GeoHandler implements GeolocationService.Iface {
         long start = System.currentTimeMillis();
 
         PreparedStatement statement = Database.prepareFromCache(
-                "SELECT unixTimestampOf(time) AS time_unix, json FROM global.slave WHERE level=? AND s2_id=? AND time >= ?");
+                "SELECT unixTimestampOf(time) AS time_unix, json FROM global01.slave WHERE level=? AND s2_id=? AND time >= ?");
 
         S2LatLng loc = S2LatLng.fromDegrees(lat, lng);
         List<Feature> results = new ArrayList<>();

@@ -5,6 +5,7 @@ import atexit
 import geojson
 import geohelper
 import cassandra
+import time
 
 from connect import connect_to
 from s2 import *
@@ -12,20 +13,17 @@ from cassandra.cluster import Cluster
 from cassandra.util import HIGHEST_TIME_UUID
 import cfgparser
 
-'''Only purpose is to track progress of loading'''
-from track import count
-
 CFG = cfgparser.load_module('dbhelper')
 
 
 TRUNCATE_TABLE_WHEN_START = CFG['truncate table when start']
 CLUSTER_LIST = CFG['list of node']
 KEYSPACE = CFG['key space']
-CLUSTER = connect_to(CLUSTER_LIST)
+CLUSTER = Cluster(CLUSTER_LIST)
 SESSION = CLUSTER.connect(KEYSPACE)
 PS_INSERT = '''INSERT INTO slave (level, s2_id, time, osm_id, json, is_cut) VALUES (?, ?, ?, ?, ?, ?)'''
 PREPARED_INSERT = SESSION.prepare(PS_INSERT)
-MASTER_INSERT = '''INSERT INTO master (osm_id, json) VALUES (?, ?))'''
+MASTER_INSERT = '''INSERT INTO master (osm_id, json) VALUES (?, ?)'''
 PREPARED_MASTER_INSERT = SESSION.prepare(MASTER_INSERT)
 
 '''def connect_to_cluster()
@@ -94,10 +92,9 @@ def __initialize():
 
 def __before_exit():
     '''Wait to ensure that all insertion has been into the table'''
-    count()
     if insert_by_covering.handle0 is not None or insert_by_covering.handle1 is not None:
         print 'Waiting for database to finish up...'
-        if insert_by_convering.handle0 is not None:
+        if insert_by_covering.handle0 is not None:
             insert_by_covering.handle0.result()
         elif insert_by_covering.handle1 is not None:
             insert_by_covering.handle1.result()

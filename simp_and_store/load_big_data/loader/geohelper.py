@@ -125,7 +125,10 @@ def get_pt_list(feature):
 
     list[(lng, lat)], the order is specified by GeoJson. Found an utility in geojson library,
     this function becomes an alias of that function'''
-    return geojson.utils.coords(feature)
+    result = []
+    for thing in geojson.utils.coords(feature):
+        result.append(thing)
+    return result
 
 
 def get_coverer_bad(bbox):
