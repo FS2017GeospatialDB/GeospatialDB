@@ -80,6 +80,7 @@ def load_by_cutting(feature):
             cut_feature = slicing.slice_feature(feature, cutting_lv)
             dbhelper.insert_by_cut_feature(cut_feature)
 
+
 def load_into_master(feature):
     '''Load the original copy of the feature into the master copy table'''
     dbhelper.insert_master(feature)
@@ -94,14 +95,15 @@ def run(file_list):
             print 'Storing to database...'
             for feature in jsonItems(file, 'features.item'):
                 start = timer()
-                
+
                 load_into_master(feature)
                 load_by_duplication(feature)
                 load_by_cutting(feature)
-                
+
                 end = timer()
                 print 'Done!'
                 print 'Storing to db finished in %.5fs' % (end - start)
+
 
 def jsonItems(file, prefix):
     items = ijson.parse(file)
@@ -119,6 +121,7 @@ def jsonItems(file, prefix):
                 yield builder.value
     except StopIteration:
         pass
+
 
 def __load_config():
     cfg = cfgparser.load()
