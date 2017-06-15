@@ -5,7 +5,6 @@ import numpy
 import geojson
 import s2sphere
 import traceback
-from s2 import *
 
 from copy import deepcopy
 DEBUG_PRINT = False
@@ -39,8 +38,10 @@ def slice_feature(json, level):
 def slicePoint(pointJson, level):
     pointJson = deepcopy(pointJson)
     coord = pointJson['geometry']['coordinates']
-    latlng = S2LatLng.FromDegrees(coord[1], coord[0])
-    cellID = S2CellId.FromLatLng(latlng).parent(level).id()
+
+    latlng = s2sphere.LatLng.from_degrees(coord[1], coord[0])
+    cellID = s2sphere.CellId.from_lat_lng(latlng).parent(level).id()
+
     return {cellID: pointJson}
 
 def sliceMultiPoint(multiPointJson, level):
@@ -77,9 +78,8 @@ def sliceLineString(lineStringJson, level, clockwise = True):
     result = {}
     lastCell = lastPoint = None
     for point in line:
-        latlng = S2LatLng.FromDegrees(point[1], point[0])
-        cell = S2CellId.FromLatLng(latlng).parent(level)
-        point = S2CellId.FromLatLng(latlng)
+        cell = s2sphere.CellId.from_lat_lng(s2sphere.LatLng.from_degrees(point[1], point[0])).parent(level)
+        point = s2sphere.CellId.from_lat_lng(s2sphere.LatLng.from_degrees(point[1], point[0]))
 
         success = False
         while not success:
@@ -93,18 +93,18 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 
                 # Handle Different Sides
                 if lastCell.face() != cell.face():
-                    s3, t3 = get_st(lastPoint)
-                    s4, t4 = get_st_for_face(lastPoint.face(), get_closest_xyz(lastPoint, point))
+                    s3,t3 = get_st(lastPoint)
+                    s4,t4 = get_st_for_face(lastPoint.face(), get_closest_xyz(lastPoint, point))
 
                 # Handle Same Side
                 else:
-                    s3, t3 = get_st(lastPoint)
-                    s4, t4 = get_st(point)
+                    s3,t3 = get_st(lastPoint)
+                    s4,t4 = get_st(point)
 
-                cs1, ct1 = get_st_for_face(lastCell.face(), get_xyz(S2CellId.FromPoint(S2Cell(lastCell).GetVertex(0))))
-                cs2, ct2 = get_st_for_face(lastCell.face(), get_xyz(S2CellId.FromPoint(S2Cell(lastCell).GetVertex(2))))
+                cs1, ct1 = get_st_for_face(lastCell.face(), get_xyz(s2sphere.CellId.from_point(s2sphere.Cell(lastCell).get_vertex(0))))
+                cs2, ct2 = get_st_for_face(lastCell.face(), get_xyz(s2sphere.CellId.from_point(s2sphere.Cell(lastCell).get_vertex(2))))
                 rightT, leftT, upT, downT = max(cs1, cs2) - s3, min(cs1, cs2) - s3, max(ct1, ct2) - t3, min(ct1, ct2) - t3
-
+                
                 if rightT == 0:
                     rightT += 1e-6
                 if leftT == 0:
@@ -113,7 +113,7 @@ def sliceLineString(lineStringJson, level, clockwise = True):
                     upT += 1e-6
                 if downT == 0:
                     downT -= 1e-6
-
+                
                 try:
                     rightT /= (s4 - s3)
                     leftT /= (s4 - s3)
@@ -128,23 +128,24 @@ def sliceLineString(lineStringJson, level, clockwise = True):
 
                 decision = min(max(leftT, rightT), max(upT, downT))
                 down, right, up, left = lastCell.get_edge_neighbors()
-                nextCell = S2CellId(right.id() if (decision == rightT) \
+                nextCell = s2sphere.CellId(right.id() if (decision == rightT) \
                     else (left.id() if (decision == leftT) \
                         else (up.id() if (decision == upT) \
                             else down.id())))
-                nextCell = S2CellId(right.id() if (cell.id() == right.id()) \
+                nextCell = s2sphere.CellId(right.id() if (cell.id() == right.id()) \
                     else (left.id() if (cell.id() == left.id()) \
                         else (up.id() if (cell.id() == up.id()) \
                             else (down.id() if (cell.id() == down.id()) \
                                 else nextCell.id()))))
-                decisionCode = (['L', 'R'] if nextCell.id() == left.id() \
-                    else (['R', 'L'] if nextCell.id() == right.id() \
-                        else (['U', 'D'] if nextCell.id() == up.id() \
-                            else ['D', 'U'])))
+                decisionCode = (['L','R'] if nextCell.id() == left.id() \
+                    else (['R','L'] if nextCell.id() == right.id() \
+                        else (['U','D'] if nextCell.id() == up.id() \
+                            else ['D','U'])))
 
-                face, i, j = lastCell.face(), S2CellId.STtoIJ((decision * (s4 - s3)) + s3), S2CellId.STtoIJ((decision * (t4 - t3)) + t3)
-                fakeS, fakeT = get_st_for_face(nextCell.face(), get_xyz(S2CellId.FromFaceIJ(face, i, j)))
-                fakePoint = S2CellId.FromFaceIJ(nextCell.face(), S2CellId.STtoIJ(fakeS), S2CellId.STtoIJ(fakeT))
+
+                face,i,j = lastCell.face(), s2sphere.CellId.st_to_ij((decision * (s4 - s3)) + s3), s2sphere.CellId.st_to_ij((decision * (t4 - t3)) + t3)
+                fakeS,fakeT = get_st_for_face(nextCell.face(), get_xyz(s2sphere.CellId.from_face_ij(face, i, j)))
+                fakePoint = s2sphere.CellId.from_face_ij(nextCell.face(), s2sphere.CellId.st_to_ij(fakeS), s2sphere.CellId.st_to_ij(fakeT))
 
                 result[lastCell.id()]['geometry']['coordinates'].append([fakePoint.to_lat_lng().lng().degrees, fakePoint.to_lat_lng().lat().degrees, ('EL' if clockwise else 'EE') + decisionCode[0]])
                 if not nextCell.id() in result:
@@ -310,7 +311,7 @@ def wrapCorner(s2_id, clockwise, start_code, end_code):
         curEdge = sides[start]
         nextEdge = sides[(start + delta) % len(sides)]
 
-        latlng = getCornerLatLong(S2CellId(s2_id), curEdge, nextEdge)
+        latlng = getCornerLatLong(s2sphere.CellId(s2_id), curEdge, nextEdge)
         result.append([latlng.lng().degrees, latlng.lat().degrees, 'C'+curEdge+nextEdge])
 
         start = (start + delta) % len(sides)
@@ -319,24 +320,25 @@ def wrapCorner(s2_id, clockwise, start_code, end_code):
 # Untested
 def getCornerLatLong(cell, startSide, endSide):
     if startSide in ['U', 'R'] and endSide in ['U', 'R']:
-        return S2CellId.FromPoint(S2Cell(cell).get_vertex(2)).to_lat_lng()
+        return s2sphere.CellId.from_point(s2sphere.Cell(cell).get_vertex(2)).to_lat_lng()
     elif startSide in ['R', 'D'] and endSide in ['R', 'D']:
-        return S2CellId.FromPoint(S2Cell(cell).get_vertex(1)).to_lat_lng()
+        return s2sphere.CellId.from_point(s2sphere.Cell(cell).get_vertex(1)).to_lat_lng()
     elif startSide in ['D', 'L'] and endSide in ['D', 'L']:
-        return S2CellId.FromPoint(S2Cell(cell).get_vertex(0)).to_lat_lng()
+        return s2sphere.CellId.from_point(s2sphere.Cell(cell).get_vertex(0)).to_lat_lng()
     elif startSide in ['L', 'U'] and endSide in ['L', 'U']:
-        return S2CellId.FromPoint(S2Cell(cell).get_vertex(3)).to_lat_lng()
+        return s2sphere.CellId.from_point(s2sphere.Cell(cell).get_vertex(3)).to_lat_lng()
 
 def get_st(cellId):
     # Compute s,t
-    u, v = cellId.GetCenterUV()
-    s, t = s2sphere.CellId.uv_to_st(u), s2sphere.CellId.uv_to_st(v)
-    return s, t
+    u,v = cellId.get_center_uv()
+    s,t = s2sphere.CellId.uv_to_st(u), s2sphere.CellId.uv_to_st(v)
+
+    return s,t
 
 def get_xyz(cellId):
     # Compute face,s,t
     face = cellId.face()
-    s, t = get_st(cellId)
+    s,t = get_st(cellId)
 
     # Corner Point (0,0,0) @ (-45\deg, -45\deg)
     x,y,z = 0,0,0
