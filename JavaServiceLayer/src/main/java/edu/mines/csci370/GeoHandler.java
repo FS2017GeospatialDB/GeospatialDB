@@ -207,7 +207,7 @@ public class GeoHandler implements GeolocationService.Iface {
         // Lookup the Cells in the Database
         Session session = Database.getSession();
         PreparedStatement statement = Database.prepareFromCache(
-                "SELECT unixTimestampOf(time) AS time_unix, osm_id, json FROM global01.slave WHERE level=? AND s2_id=? AND time>=?");
+                "SELECT unixTimestampOf(time) AS time_unix, osm_id, json FROM slave WHERE level=? AND s2_id=? AND time>=?");
 
         HashMap<Long, HashMap<String, Feature>> featureMap = new HashMap<Long, HashMap<String, Feature>>();
 
@@ -250,7 +250,7 @@ public class GeoHandler implements GeolocationService.Iface {
         long start = System.currentTimeMillis();
 
         PreparedStatement statement = Database.prepareFromCache(
-                "SELECT unixTimestampOf(time) AS time_unix, json FROM global01.slave WHERE level=? AND s2_id=? AND time >= ?");
+                "SELECT unixTimestampOf(time) AS time_unix, json FROM slave WHERE level=? AND s2_id=? AND time >= ?");
 
         S2LatLng loc = S2LatLng.fromDegrees(lat, lng);
         List<Feature> results = new ArrayList<>();

@@ -17,11 +17,11 @@ import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TMemoryBuffer;
 
-import java.io.*;
-import java.net.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.io.OutputStreamWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 /**
  * We uses a Javascript client as our front-end project. As thrift JS library only supports web-socket and xml http request.
@@ -30,57 +30,18 @@ import java.util.Properties;
  */
 
 public class Server {
-    private static List<InetAddress> db_contact_points;
-
-    /**
-     * given the string of the db host (separated by ','), parse the
-     * address of the hosts and stores in to db contact points.
-     * @param contact_str
-     */
-    private static void parseDBContactPts(String contact_str) {
-        String[] contactpts = contact_str.split(",");
-        db_contact_points = new ArrayList<>();
-        for (String host : contactpts) {
-            try {
-                db_contact_points.add(Inet4Address.getByName(host));
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-            }
-        }
-        // post behavior
-        Database.initialize(db_contact_points);
-    }
-
-    /**
-     * Given the filename of the config file, parse the file. ugly...
-     */
-    private static void cfgParser(String filename) {
-        if (filename == null) {
-            System.err.println("No config file applied, using the default values...");
-            parseDBContactPts("127.0.0.1");
-        }
-
-        File configFile = new File(filename);
-        try {
-            FileReader reader = new FileReader(configFile);
-            Properties props = new Properties();
-            props.load(reader);
-
-            String contactPts = props.getProperty("contact_points");
-            parseDBContactPts(contactPts);
-
-            reader.close();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
 
     /**
      * Start the http server and listen to port 8000
      */
     public static void main(String[] args) {
-        if (args.length == 0) cfgParser(null);
-        else cfgParser(args[0]);
+        if (args.length == 0) {
+            System.err.println("No config file applied, using the default values...");
+            System.err.println("The sample config file is located under the root dir of JSL");
+            Database.initialize(null);
+        } else
+            Database.initialize(args[0]);
+
         try {
             Thread t = new RequestListenerThread(8000);
             t.setDaemon(false);
