@@ -11,7 +11,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <geotools.version>15.1</geotools.version>
+        <!--<geotools.version>15.1</geotools.version>-->
     </properties>
     <build>
         <plugins>
@@ -34,33 +34,8 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>3.8.1</version>
+            <version>4.11</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>16.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.datastax.cassandra</groupId>
-            <artifactId>cassandra-driver-core</artifactId>
-            <version>3.2.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.datastax.cassandra</groupId>
-            <artifactId>cassandra-driver-mapping</artifactId>
-            <version>3.2.0</version>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty</artifactId>
-            <version>3.9.0.Final</version>
-        </dependency>
-        <dependency>
-            <groupId>com.codahale.metrics</groupId>
-            <artifactId>metrics-core</artifactId>
-            <version>3.0.2</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -73,25 +48,14 @@
             <version>1.7.25</version>
         </dependency>
         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>16.0.1</version>
+        </dependency>
+        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.3.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.thrift</groupId>
-            <artifactId>libthrift</artifactId>
-            <version>0.10.0</version>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-transport-native-epoll</artifactId>
-            <version>4.0.27.Final</version>
-            <classifier>linux-x86_64</classifier>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <version>3.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.jnegre.google</groupId>
@@ -99,26 +63,56 @@
             <version>1.2</version>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.11</version>
-            <scope>test</scope>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+            <version>0.10.0</version>
         </dependency>
         <dependency>
-            <groupId>org.geotools</groupId>
-            <artifactId>gt-shapefile</artifactId>
-            <version>${geotools.version}</version>
+            <groupId>com.datastax.cassandra</groupId>
+            <artifactId>cassandra-driver-core</artifactId>
+            <version>3.2.0</version>
         </dependency>
         <dependency>
-            <groupId>org.geotools</groupId>
-            <artifactId>gt-swing</artifactId>
-            <version>${geotools.version}</version>
+            <groupId>com.datastax.cassandra</groupId>
+            <artifactId>cassandra-driver-mapping</artifactId>
+            <version>3.2.0</version>
         </dependency>
-        <dependency>
-            <groupId>org.geotools</groupId>
-            <artifactId>gt-geojson</artifactId>
-            <version>${geotools.version}</version>
-        </dependency>
+        <!--<dependency>-->
+        <!--<groupId>com.codahale.metrics</groupId>-->
+        <!--<artifactId>metrics-core</artifactId>-->
+        <!--<version>3.0.2</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+        <!--<groupId>javax.servlet</groupId>-->
+        <!--<artifactId>javax.servlet-api</artifactId>-->
+        <!--<version>3.1.0</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+        <!--<groupId>io.netty</groupId>-->
+        <!--<artifactId>netty</artifactId>-->
+        <!--<version>3.9.0.Final</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+        <!--<groupId>io.netty</groupId>-->
+        <!--<artifactId>netty-transport-native-epoll</artifactId>-->
+        <!--<version>4.0.27.Final</version>-->
+        <!--<classifier>linux-x86_64</classifier>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+        <!--<groupId>org.geotools</groupId>-->
+        <!--<artifactId>gt-shapefile</artifactId>-->
+        <!--<version>${geotools.version}</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+        <!--<groupId>org.geotools</groupId>-->
+        <!--<artifactId>gt-swing</artifactId>-->
+        <!--<version>${geotools.version}</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+        <!--<groupId>org.geotools</groupId>-->
+        <!--<artifactId>gt-geojson</artifactId>-->
+        <!--<version>${geotools.version}</version>-->
+        <!--</dependency>-->
     </dependencies>
     <repositories>
         <repository>
@@ -127,14 +121,14 @@
             <url>http://download.java.net/maven/2</url>
         </repository>
         <repository>
-            <id>osgeo</id>
-            <name>Open Source Geospatial Foundation Repository</name>
-            <url>http://download.osgeo.org/webdav/geotools/</url>
-        </repository>
-        <repository>
             <id>jnegre</id>
             <name>Jerome Negre</name>
             <url>https://dl.bintray.com/jnegre/maven</url>
         </repository>
+        <!--<repository>-->
+        <!--<id>osgeo</id>-->
+        <!--<name>Open Source Geospatial Foundation Repository</name>-->
+        <!--<url>http://download.osgeo.org/webdav/geotools/</url>-->
+        <!--</repository>-->
     </repositories>
 </project>

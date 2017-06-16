@@ -6,20 +6,13 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.geometry.*;
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.LinearRing;
-import com.vividsolutions.jts.geom.Polygon;
 import edu.mines.csci370.api.Feature;
 import edu.mines.csci370.api.GeolocationService;
-import org.geotools.geojson.geom.GeometryJSON;
-import org.geotools.geometry.jts.JTSFactoryFinder;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import java.io.File;
-import java.util.*;
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.*;
 
 public class GeoHandler implements GeolocationService.Iface {
     private static int OFFSET = 2;
@@ -108,35 +101,6 @@ public class GeoHandler implements GeolocationService.Iface {
         return coverMap;
     }
 
-    public String getGeoJsonStrFromLLRect(S2LatLngRect rect) {
-        S2LatLng vert0 = rect.getVertex(0);
-        S2LatLng vert1 = rect.getVertex(1);
-        S2LatLng vert2 = rect.getVertex(2);
-        S2LatLng vert3 = rect.getVertex(3);
-        GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
-        Coordinate[] coords =
-                new Coordinate[]{
-                        new Coordinate(vert0.lngDegrees(), vert0.latDegrees()),
-                        new Coordinate(vert1.lngDegrees(), vert1.latDegrees()),
-                        new Coordinate(vert2.lngDegrees(), vert2.latDegrees()),
-                        new Coordinate(vert3.lngDegrees(), vert3.latDegrees()),
-                        new Coordinate(vert0.lngDegrees(), vert0.latDegrees())};
-
-        LinearRing ring = geometryFactory.createLinearRing(coords);
-        LinearRing holes[] = null; // use LinearRing[] to represent holes
-        Polygon polygon = geometryFactory.createPolygon(ring, holes);
-
-        GeometryJSON geojson = new GeometryJSON();
-        StringWriter writer = new StringWriter();
-        try {
-            geojson.writePolygon(polygon, writer);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return writer.toString();
-    }
-
     private List<Feature> letMeMessUpThings(TreeMap<Integer, ArrayList<Feature>> featureMap, TreeMap<Integer, ArrayList<String>> osmIdMap) {
         // Putting everything into the holder
         HashMap<String, List<Feature>> holder = new HashMap<>();
@@ -212,7 +176,7 @@ public class GeoHandler implements GeolocationService.Iface {
             HashMap<String, Feature> features = featureMap.get(s2_id);
             for (String id : features.keySet()) {
                 Feature f = features.get(id);
-		if (f.getJson() == null) continue;
+                if (f.getJson() == null) continue;
                 if (!resultMap.containsKey(id)) {
                     resultMap.put(id, f);
                 } else {
@@ -257,16 +221,16 @@ public class GeoHandler implements GeolocationService.Iface {
                 for (Row row : rs.all()) {
                     featureCounter++;
                     Feature f = new Feature(row.getLong("time_unix"), row.getString("json"));
-		    String id = row.getString("osm_id");
-		    if (features.containsKey(id)) {
+                    String id = row.getString("osm_id");
+                    if (features.containsKey(id)) {
                         if (f.getTime() < features.get(id).getTime()) {
                             features.put(id, f);
                         } else continue;
-		    } else {
+                    } else {
                         features.put(id, f);
                     }
                 }
-	        if (!features.isEmpty()) {
+                if (!features.isEmpty()) {
                     featureMap.put(cell.id(), features);
                 }
             }
@@ -333,13 +297,13 @@ public class GeoHandler implements GeolocationService.Iface {
                 ProcessBuilder pb = new ProcessBuilder("/usr/bin/python2.7", "jsl.py", id, feature, "new");
                 String path = "";
                 try {
-                  path = (new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())).getParent().toString();
+                    path = (new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())).getParent().toString();
                 } catch (URISyntaxException e) {
-                  path = getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
-                  path = path.substring(0, path.lastIndexOf("/"));
+                    path = getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
+                    path = path.substring(0, path.lastIndexOf("/"));
                 } finally {
-                  path = path.substring(0, path.lastIndexOf("/")) + "/src/py_interface/";
-                  pb.directory(new File(path));
+                    path = path.substring(0, path.lastIndexOf("/")) + "/src/py_interface/";
+                    pb.directory(new File(path));
                 }
                 Process p = pb.start();
             } catch (IOException e) {
@@ -351,13 +315,13 @@ public class GeoHandler implements GeolocationService.Iface {
                 ProcessBuilder pb = new ProcessBuilder("/usr/bin/python2.7", "jsl.py", id, feature, "modify");
                 String path = "";
                 try {
-                  path = (new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())).getParent().toString();
+                    path = (new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())).getParent().toString();
                 } catch (URISyntaxException e) {
-                  path = getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
-                  path = path.substring(0, path.lastIndexOf("/"));
+                    path = getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
+                    path = path.substring(0, path.lastIndexOf("/"));
                 } finally {
-                  path = path.substring(0, path.lastIndexOf("/")) + "/src/py_interface/";
-                  pb.directory(new File(path));
+                    path = path.substring(0, path.lastIndexOf("/")) + "/src/py_interface/";
+                    pb.directory(new File(path));
                 }
                 Process p = pb.start();
             } catch (IOException e) {
@@ -374,13 +338,13 @@ public class GeoHandler implements GeolocationService.Iface {
             ProcessBuilder pb = new ProcessBuilder("/usr/bin/python2.7", "jsl.py", id, "", "delete");
             String path = "";
             try {
-              path = (new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())).getParent().toString();
+                path = (new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())).getParent().toString();
             } catch (URISyntaxException e) {
-              path = getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
-              path = path.substring(0, path.lastIndexOf("/"));
+                path = getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
+                path = path.substring(0, path.lastIndexOf("/"));
             } finally {
-              path = path.substring(0, path.lastIndexOf("/")) + "/src/py_interface/";
-              pb.directory(new File(path));
+                path = path.substring(0, path.lastIndexOf("/")) + "/src/py_interface/";
+                pb.directory(new File(path));
             }
             System.out.println(id);
             Process p = pb.start();

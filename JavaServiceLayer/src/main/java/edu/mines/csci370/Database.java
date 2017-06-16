@@ -2,12 +2,13 @@ package edu.mines.csci370;
 
 import com.datastax.driver.core.*;
 
+import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("WeakerAccess")
 public class Database {
-    private static Database __ = new Database();
     private static Cluster _cluster;
     private static Session _session;
     private static Map<String, PreparedStatement> _cache = new HashMap<>();
@@ -15,34 +16,34 @@ public class Database {
     /**
      * Disable Direct Instantiation
      */
-    private Database() {initialize();}
+    private Database() {}
 
     /**
      * Initialize the DB connection.
      */
-    private static void initialize() {
+    public static void initialize(List<InetAddress> contactPts) {
         PoolingOptions poolingOptions = new PoolingOptions();
         poolingOptions
                 .setConnectionsPerHost(HostDistance.LOCAL, 2, 8);
         _cluster = Cluster.builder()
-            .addContactPoints("127.0.0.1")
-            .withPoolingOptions(poolingOptions)
-            .addContactPoints("127.0.0.1")
-            .build();
+                .withPoolingOptions(poolingOptions)
+                .addContactPoints(contactPts)
+                .build();
         _session = _cluster.connect();
     }
 
     /**
      * Get a reference to the reused session object.
      */
-    public static Session getSession() {
-        return _session;
-    }
+    public static Session getSession() {return _session;}
 
+    /**
+     * Get a reference to the static cluster object.
+     */
     public static Cluster getCluster() {return _cluster;}
 
     /**
-     * Prepare a statement (or retrieve it from the cache).
+     * Prepare a statement (or retrieve it from the cache if cached).
      */
     public static PreparedStatement prepareFromCache(String statement) {
         if (_cache.containsKey(statement))
@@ -52,12 +53,16 @@ public class Database {
     }
 
     /**
-     * Auto cleanup the DB connection
+     * Auto close the DB connection when the program quits
      */
     @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-        if (_cluster != null)
-            _cluster.close();
+    protected void finalize() {
+        try {
+            super.finalize();
+            if (_cluster != null)
+                _cluster.close();
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+        }
     }
 }

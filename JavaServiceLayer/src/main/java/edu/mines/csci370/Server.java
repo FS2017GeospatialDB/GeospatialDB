@@ -2,7 +2,6 @@ package edu.mines.csci370;
 
 import edu.mines.csci370.api.GeolocationService;
 import org.apache.http.*;
-import org.apache.http.entity.ContentProducer;
 import org.apache.http.entity.EntityTemplate;
 import org.apache.http.impl.DefaultHttpResponseFactory;
 import org.apache.http.impl.DefaultHttpServerConnection;
@@ -18,25 +17,70 @@ import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TMemoryBuffer;
 
-import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.io.*;
+import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * We uses a Javascript client as our front-end project. As thrift JS library only supports web-socket and xml http request.
- * we cannot use native socket to communicate with the front-end application. As a workaround, we build a small, but fully
+ * we cannot use native socket to communicate with the front-end application. As a workaround, we built a small, but fully
  * functional http server to respond the request from the front-end application.
  */
 
 public class Server {
+    private static List<InetAddress> db_contact_points;
+
+    /**
+     * given the string of the db host (separated by ','), parse the
+     * address of the hosts and stores in to db contact points.
+     * @param contact_str
+     */
+    private static void parseDBContactPts(String contact_str) {
+        String[] contactpts = contact_str.split(",");
+        db_contact_points = new ArrayList<>();
+        for (String host : contactpts) {
+            try {
+                db_contact_points.add(Inet4Address.getByName(host));
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
+        }
+        // post behavior
+        Database.initialize(db_contact_points);
+    }
+
+    /**
+     * Given the filename of the config file, parse the file. ugly...
+     */
+    private static void cfgParser(String filename) {
+        if (filename == null) {
+            System.err.println("No config file applied, using the default values...");
+            parseDBContactPts("127.0.0.1");
+        }
+
+        File configFile = new File(filename);
+        try {
+            FileReader reader = new FileReader(configFile);
+            Properties props = new Properties();
+            props.load(reader);
+
+            String contactPts = props.getProperty("contact_points");
+            parseDBContactPts(contactPts);
+
+            reader.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
     /**
      * Start the http server and listen to port 8000
      */
     public static void main(String[] args) {
-        Database.getCluster();
+        if (args.length == 0) cfgParser(null);
+        else cfgParser(args[0]);
         try {
             Thread t = new RequestListenerThread(8000);
             t.setDaemon(false);
@@ -46,6 +90,10 @@ public class Server {
         }
     }
 
+    /**
+     * The main thread which listen to the http request. When a request is received, a new thread is spawned to handle
+     * the request.
+     */
     static class RequestListenerThread extends Thread {
 
         private final ServerSocket httpServerSocket;
@@ -82,20 +130,17 @@ public class Server {
                     conn.bind(socket, this.params);
 
                     // Start worker thread
-                    Thread t = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
+                    Thread t = new Thread(() -> {
+                        try {
+                            HttpContext context = new BasicHttpContext(null);
+                            while (!Thread.interrupted() && conn.isOpen())
+                                httpService.handleRequest(conn, context);
+                        } catch (IOException | HttpException e) {
+                            System.err.println(e.getMessage());
+                        } finally {
                             try {
-                                HttpContext context = new BasicHttpContext(null);
-                                while (!Thread.interrupted() && conn.isOpen())
-                                    httpService.handleRequest(conn, context);
-                            } catch (IOException | HttpException e) {
-                                System.err.println(e.getMessage());
-                            } finally {
-                                try {
-                                    conn.shutdown();
-                                } catch (IOException ignore) {
-                                }
+                                conn.shutdown();
+                            } catch (IOException ignore) {
                             }
                         }
                     });
@@ -112,6 +157,9 @@ public class Server {
         }
     }
 
+    /**
+     * Thrift protocol handler.
+     */
     static class ThriftRequestHandler implements HttpRequestHandler {
         public void handle(final HttpRequest request, final HttpResponse response, final HttpContext context) throws HttpException, IOException {
 
@@ -129,12 +177,10 @@ public class Server {
                 byte[] entityContent = EntityUtils.toByteArray(entity);
 
                 final String output = this.thriftRequest(entityContent);
-                EntityTemplate body = new EntityTemplate(new ContentProducer() {
-                    public void writeTo(final OutputStream outstream) throws IOException {
-                        OutputStreamWriter writer = new OutputStreamWriter(outstream, "UTF-8");
-                        writer.write(output);
-                        writer.flush();
-                    }
+                EntityTemplate body = new EntityTemplate(outstream -> {
+                    OutputStreamWriter writer = new OutputStreamWriter(outstream, "UTF-8");
+                    writer.write(output);
+                    writer.flush();
                 });
 
                 body.setContentType("text/html; charset=UTF-8");
@@ -162,7 +208,7 @@ public class Server {
                 TProtocol outprotocol = new TJSONProtocol(outbuffer);
 
                 GeoHandler handler = new GeoHandler();
-                TProcessor processor = new GeolocationService.Processor<GeoHandler>(handler);
+                TProcessor processor = new GeolocationService.Processor<>(handler);
                 processor.process(inprotocol, outprotocol);
 
                 byte[] output = new byte[outbuffer.length()];
@@ -175,6 +221,4 @@ public class Server {
             }
         }
     }
-
-
 }
