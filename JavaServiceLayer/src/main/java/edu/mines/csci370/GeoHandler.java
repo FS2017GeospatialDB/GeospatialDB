@@ -342,6 +342,7 @@ public class GeoHandler implements GeolocationService.Iface {
                   pb.directory(new File(path));
                 }
                 Process p = pb.start();
+		
             } catch (IOException e) {
                 System.out.println(e);
             }
