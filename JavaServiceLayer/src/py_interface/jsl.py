@@ -17,7 +17,7 @@ import geohelper
 import main
 
 # determine if sufficient arguments are given
-if len(sys.argv) != 4: 
+if len(sys.argv) != 4:
     sys.exit(1)
 
 OSM_ID = sys.argv[1]
@@ -31,7 +31,6 @@ if (PROCEDURE != 'delete'):
 # new, modify, delete
 
     # insert empty feature into the database @ current timestamp
-    
 if PROCEDURE == 'new':
     for BBOX in BBOXES:
         COVERINGS = geohelper.get_covering(BBOX)
