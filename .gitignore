@@ -1,12 +1,11 @@
 *.pyc
+*.class
+*.jar
 
 *.osm
 *.pbf
 *.json
 *.geojson
-
-JSL*/target
-JSL*/lib
 
 .classpath
 .project
@@ -14,3 +13,5 @@ JSL*/lib
 
 .idea
 .vscode
+
+JavaServiceLayer/target
