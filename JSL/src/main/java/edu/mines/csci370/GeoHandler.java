@@ -39,8 +39,10 @@ public class GeoHandler implements GeolocationService.Iface {
     S2LatLngRect rect = new S2LatLngRect(bottomLeft, topRight);
 
     // Determine Necessary Level
-    double area = rect.area() * S2LatLng.EARTH_RADIUS_METERS * S2LatLng.EARTH_RADIUS_METERS;
-    int level = 16;
+    double area = rect.area();
+    int level = 12;
+    if (area > 1e-7) level = 8;
+    if (area > 1e-6) level = 4;
 
     // Get Cells Covering Area
     ArrayList<S2CellId> cells = new ArrayList<>();
@@ -84,7 +86,7 @@ public class GeoHandler implements GeolocationService.Iface {
             pieces.get(osmId).put(cell.id(), (JSONObject) (new JSONParser()).parse(json));
             timestamps.put(osmId, timestamp);
 
-           // results.add(new Feature(timestamp, json));
+           results.add(new Feature(timestamp, json));
           }
           
         } catch (ParseException e) {
@@ -94,7 +96,7 @@ public class GeoHandler implements GeolocationService.Iface {
     }
 
     // Recombine Features
-    for (String osmId : pieces.keySet()) {
+    /*for (String osmId : pieces.keySet()) {
       Map<Long, JSONObject> list = pieces.get(osmId);
 
       JSONObject unified = reconstruct(list, lBox, rBox, bBox, tBox);
@@ -104,7 +106,7 @@ public class GeoHandler implements GeolocationService.Iface {
           unified.toString()
         ));
       }
-    }
+    }*/
 
     long finish = System.currentTimeMillis();
     System.out.println(cells.size() + " queries @ scale=" + level + " in " + (finish - start) + "ms");
@@ -143,7 +145,7 @@ public class GeoHandler implements GeolocationService.Iface {
   }
 
   private JSONObject reconstruct(Map<Long, JSONObject> s2CellToJson, double lBox, double rBox, double bBox, double tBox) {
-    System.out.println("Reconstructing " + s2CellToJson);
+    //System.out.println("Reconstructing " + s2CellToJson);
 
     // Simple Case == Already Reconstructed
     if (s2CellToJson.size() == 1)
