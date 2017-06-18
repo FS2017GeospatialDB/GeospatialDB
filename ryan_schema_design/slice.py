@@ -69,9 +69,10 @@ def slice_feature(json, level):
     that feature belongs to, json is the cutted geojson feature'''
     feature_set = dict()
     geo_type = json['geometry']['type']
-    # no need to slice points, as duplicate method already stores original data
     try:
-        if geo_type == 'MultiPoint':
+        if geo_type == 'Point':
+            feature_set = slicePoint(json, level)
+        elif geo_type == 'MultiPoint':
             feature_set = sliceMultiPoint(json, level)
         elif geo_type == 'LineString':
             feature_set = sliceLineString(json, level)

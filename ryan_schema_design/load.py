@@ -8,7 +8,7 @@ import logging
 import cassandra
 
 from cassandra.cluster import Cluster
-ranges = {4: 1e-2, 8: 1e-3, 12: -1e-11}
+ranges = {4: 1e-1, 8: 1e-2, 12: -1e-11}
 
 # Setup Logging
 logging.basicConfig(filename="/var/tmp/load_features.log", filemode="w", level=logging.INFO)
@@ -88,7 +88,7 @@ def load(fileList):
                             # Only put visible features into high levels
                             if feat_range < ranges[level]:
                                continue
-
+                                
                             pieces = slice.slice_feature(feature, level)
                             for cellID,cellJson in pieces.items():
                                 cellID = (cellID + 2**63) % 2**64 - 2**63                       # Convert to 64-bit Signed Integer
