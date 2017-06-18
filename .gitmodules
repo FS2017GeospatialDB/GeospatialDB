@@ -7,6 +7,3 @@
 [submodule "load_big_data/loader"]
 	path = load_big_data/loader
 	url = https://github.com/huhwang/GeospatialCassLoader.git
-[submodule "PerformanceTest/stress_db"]
-	path = PerformanceTest/stress_db
-	url = https://github.com/huhwang/GeospatialCassPerformanceTest.git
