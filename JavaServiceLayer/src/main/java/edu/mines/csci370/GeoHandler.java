@@ -294,7 +294,7 @@ public class GeoHandler implements GeolocationService.Iface {
             // insert into slave/master by calling python script
             try {
                 // TODO FIX THE ADDRESS FOR PYTHON 2.7 (Also in update and delete)
-                ProcessBuilder pb = new ProcessBuilder("/usr/bin/python2.7", "jsl.py", id, feature, "new");
+                ProcessBuilder pb = new ProcessBuilder("jsl.py", id, feature, "new");
                 String path = "";
                 try {
                     path = (new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())).getParent().toString();
@@ -313,7 +313,7 @@ public class GeoHandler implements GeolocationService.Iface {
         } else { // updating feature
             // insert into slave/master by calling python script
             try {
-                ProcessBuilder pb = new ProcessBuilder("/usr/bin/python2.7", "jsl.py", id, feature, "modify");
+                ProcessBuilder pb = new ProcessBuilder("jsl.py", id, feature, "modify");
                 String path = "";
                 try {
                     path = (new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())).getParent().toString();
@@ -336,7 +336,7 @@ public class GeoHandler implements GeolocationService.Iface {
     public String deleteFeature(String id) {
         // delete from slave/master by calling python script
         try {
-            ProcessBuilder pb = new ProcessBuilder("/usr/bin/python2.7", "jsl.py", id, "", "delete");
+            ProcessBuilder pb = new ProcessBuilder("jsl.py", id, "", "delete");
             String path = "";
             try {
                 path = (new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI())).getParent().toString();
