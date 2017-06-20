@@ -85,8 +85,7 @@ public class GeoHandler implements GeolocationService.Iface {
             || changeDate.get(osmId).get(cell.id()) > timestamp) {
             pieces.get(osmId).put(cell.id(), (JSONObject) (new JSONParser()).parse(json));
             timestamps.put(osmId, timestamp);
-
-           results.add(new Feature(timestamp, json));
+           //results.add(new Feature(timestamp, json));
           }
           
         } catch (ParseException e) {
@@ -96,7 +95,7 @@ public class GeoHandler implements GeolocationService.Iface {
     }
 
     // Recombine Features
-    /*for (String osmId : pieces.keySet()) {
+    for (String osmId : pieces.keySet()) {
       Map<Long, JSONObject> list = pieces.get(osmId);
 
       JSONObject unified = reconstruct(list, lBox, rBox, bBox, tBox);
@@ -106,7 +105,7 @@ public class GeoHandler implements GeolocationService.Iface {
           unified.toString()
         ));
       }
-    }*/
+    }
 
     long finish = System.currentTimeMillis();
     System.out.println(cells.size() + " queries @ scale=" + level + " in " + (finish - start) + "ms");
@@ -225,7 +224,7 @@ public class GeoHandler implements GeolocationService.Iface {
         lineComplete.add(lineSegment.get(i));
 
         // End of the Line
-        if (i == lineSegment.size() - 1 && ((JSONArray) lineSegment.get(i)).size() != 3) {
+        if (i == lineSegment.size() - 1 /*&& ((JSONArray) lineSegment.get(i)).size() != 3*/) {
           seed = null; lineSegment = null; break;
         }
 
@@ -255,8 +254,10 @@ public class GeoHandler implements GeolocationService.Iface {
             for (JSONArray tmpSegment : lines.get(nextCell)) {
               if ((double) ((JSONArray) tmpSegment.get(0)).get(0) == (double) ((JSONArray) lineSegment.get(i)).get(0)
                     && (double) ((JSONArray) tmpSegment.get(0)).get(1) == (double) ((JSONArray) lineSegment.get(i)).get(1))
-                System.out.println("Perfect Continuation: " + nextCell);
+                //System.out.println("Perfect Continuation: " + nextCell);
                 seed = nextCell; lineSegment = tmpSegment;
+                lines.get(seed).remove(tmpSegment);
+                if (lines.get(seed).size() == 0) lines.remove(seed); break;
             }
             if (seed == nextCell) break;
           }
@@ -266,16 +267,15 @@ public class GeoHandler implements GeolocationService.Iface {
             for (JSONArray tmpSegment : processed.get(nextCell)) {
               if ((double) ((JSONArray) tmpSegment.get(0)).get(0) == (double) ((JSONArray) lineSegment.get(i)).get(0)
                     && (double) ((JSONArray) tmpSegment.get(0)).get(1) == (double) ((JSONArray) lineSegment.get(i)).get(1)) {
-                System.out.println("Continuation Found, But Processed: " + nextCell);
+                //System.out.println("Continuation Found, But Processed: " + nextCell);
 
                 // Search for Existing lineComplete
                 for (JSONArray tmpLineComplete : results) {
                   if ((double) ((JSONArray) tmpLineComplete.get(0)).get(0) == (double) ((JSONArray) lineSegment.get(i)).get(0)
                       && (double) ((JSONArray) tmpLineComplete.get(0)).get(1) == (double) ((JSONArray) lineSegment.get(i)).get(1)) {
-                    System.out.println("Prepending to Existing Segment: " + nextCell);
+                    //System.out.println("Prepending to Existing Segment: " + nextCell);
                     tmpLineComplete.addAll(0, lineSegment);
-                    seed = null; lineSegment = null;
-                    break;
+                    seed = null; lineSegment = null; break;
                   }
                 }
                 if (seed == null) break;
@@ -373,11 +373,11 @@ public class GeoHandler implements GeolocationService.Iface {
       }
 
       if (firstPoint.get(0) != lastPoint.get(0) || firstPoint.get(1) != lastPoint.get(1))
-        ((JSONArray) lines.get(i)).add(lastPoint);
+        ((JSONArray) lines.get(i)).add(firstPoint);
     }
 
     // Return the Results
-    ((JSONObject) multiLine.get("geometry")).put("type", lines.size() > 1 ? "MultiPolygon" : "Polygon");    
+    ((JSONObject) multiLine.get("geometry")).put("type", "Polygon");
     return multiLine;
   }
 
