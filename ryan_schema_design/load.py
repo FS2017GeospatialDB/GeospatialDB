@@ -52,8 +52,8 @@ def load(fileList):
         INSERT INTO master (osm_id, json) VALUES (?, ?)
     ''')
     slave_insert_ps = session.prepare('''
-        INSERT INTO slave(level, s2_id, time, osm_id, is_cut, json)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO slave(level, s2_id, time, osm_id, json)
+        VALUES (?, ?, ?, ?, ?)
     ''')
 
     # Read the JSONs
@@ -94,8 +94,8 @@ def load(fileList):
                                 cellID = (cellID + 2**63) % 2**64 - 2**63                       # Convert to 64-bit Signed Integer
                                 cellJson = json.dumps(cellJson)
                                 
-                                session.execute(slave_insert_ps, (level, cellID, cassandra.util.uuid_from_time(int(time.time()), 0, 0), osm_id, True))
-                                session.execute(slave_insert_ps, (level, cellID, cassandra.util.HIGHEST_TIME_UUID, osm_id, True, cellJson))
+                                session.execute(slave_insert_ps, (level, cellID, cassandra.util.uuid_from_time(int(time.time()), 0, 0), osm_id))
+                                session.execute(slave_insert_ps, (level, cellID, cassandra.util.HIGHEST_TIME_UUID, osm_id, cellJson))
                         break
                     except Exception as e:
                         print "Exception!", e

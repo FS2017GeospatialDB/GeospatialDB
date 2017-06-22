@@ -1,6 +1,3 @@
-[submodule "JSL/lib/s2geo"]
-	path = JSL/lib/s2geo
-	url = https://github.com/google/s2-geometry-library-java.git
-[submodule "WebAppGeospatial"]
-	path = WebAppGeospatial
-	url = https://github.com/twalker1464/WebAppGeospatial.git
+[submodule "ClientWebApp"]
+	path = ClientWebApp
+	url = https://github.com/FS2017GeospatialDB/ClientWebApp.git
